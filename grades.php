@@ -505,8 +505,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 const totalGrade = student.grades.reduce((sum, g) => sum + g.grade, 0);
                 const average = (totalGrade / student.grades.length).toFixed(1);
                 html += `
-                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px]">
-                        <div class="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-lg shrink-0">
+                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px] cursor-pointer group" onclick="showGradeDetails('${student.student_name}', '${student.class_name}', '${student.semester}', ${JSON.stringify(student.grades).replace(/"/g, '&quot;')}, ${student.student_id}, '${student.class_name}')">
+                        <div class="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
                             <span>${student.student_name.charAt(0)}</span>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -514,15 +514,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                                 <span class="font-semibold text-gray-800 text-sm truncate" title="${student.student_name}">${student.student_name}</span>
                                 <span class="text-xs text-gray-500">Kls ${student.class_name} • Smt ${student.semester}</span>
                             </div>
-                            <div class="flex flex-wrap gap-1 mb-1">
-                                ${student.grades.map(g => `<span class='inline-block bg-blue-50 border border-blue-200 text-blue-700 rounded px-2 py-0.5 text-xs font-medium' title='${g.subject}'>${g.subject}: <span class='font-bold'>${g.grade}</span></span>`).join('')}
-                            </div>
-                            <div class="flex items-center justify-between mt-1">
-                                <span class="text-xs text-gray-500">Total: ${student.grades.length} mapel</span>
-                                <span class="text-xs text-gray-500">Rata-rata: <span class="font-bold text-blue-600">${average}</span></span>
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="text-xs text-gray-500">Total Nilai: <span class="font-bold text-blue-600">${totalGrade}</span></div>
+                                <div class="text-xs text-gray-500">Rata-rata: <span class="font-bold text-blue-600">${average}</span></div>
                             </div>
                         </div>
-                        <button onclick="showGradeDetails('${student.student_name}', '${student.class_name}', '${student.semester}', ${JSON.stringify(student.grades).replace(/"/g, '&quot;')}, ${student.student_id}, '${student.class_name}')" class="ml-2 text-blue-600 hover:text-blue-800 text-xs font-medium underline shrink-0">Detail</button>
                     </div>
                 `;
             });
