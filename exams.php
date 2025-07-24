@@ -244,7 +244,6 @@ $exams = getExams();
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Daftar Soal & File Ujian</h3>
                 <div class="space-y-3">
                     <?php 
-                    $currentClass = '';
                     // Gabungkan exam type=questions dengan kelas dan mapel yang sama
                     $groupedExams = [];
                     foreach ($exams as $exam) {
@@ -252,6 +251,14 @@ $exams = getExams();
                             $key = $exam['class_id'] . '_' . $exam['subject_id'];
                             if (!isset($groupedExams[$key])) {
                                 $groupedExams[$key] = $exam;
+                                $groupedExams[$key]['_all_ids'] = [$exam['id']];
+                            } else {
+                                $groupedExams[$key]['_all_ids'][] = $exam['id'];
+                                // Gunakan exam dengan id terkecil sebagai perwakilan
+                                if ($exam['id'] < $groupedExams[$key]['id']) {
+                                    $groupedExams[$key] = $exam;
+                                    $groupedExams[$key]['_all_ids'] = [$exam['id']];
+                                }
                             }
                         } else {
                             $groupedExams['file_' . $exam['id']] = $exam;
