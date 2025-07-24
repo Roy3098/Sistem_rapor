@@ -690,6 +690,19 @@ $exams = getExams();
                 }
             }
         };
+
+        function showAddQuestionModal(classId, subjectId) {
+            showQuestionModal();
+            document.querySelector('select[name=class_id]').value = classId;
+            document.querySelector('select[name=subject_id]').value = subjectId;
+            document.getElementById('questionTypeSelect').selectedIndex = 0;
+            document.getElementById('essayBlock').style.display = 'none';
+            document.getElementById('mcBlocks').style.display = 'none';
+            // Kosongkan input
+            if(document.querySelector('[name=essay_questions]')) document.querySelector('[name=essay_questions]').value = '';
+            if(document.getElementById('mcContainer')) document.getElementById('mcContainer').innerHTML = '';
+        }
+        window.showAddQuestionModal = showAddQuestionModal;
     </script>
 </body>
 </html>

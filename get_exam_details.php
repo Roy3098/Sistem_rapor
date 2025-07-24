@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exam_id'])) {
                         </div>
                         <div class='flex flex-col gap-2'>
                             <a href='exams.php?action=download&id=" . $exam['id'] . "' target='_blank' class='bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold text-center mb-1'>⬇️ Download Soal</a>
+                            <button onclick=\"window.parent.showAddQuestionModal('{$exam['class_id']}', '{$exam['subject_id']}')\" class='bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold text-center'>+ Tambah Soal</button>
                         </div>
                     </div>";
             
