@@ -495,7 +495,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 }
                 groupedGrades[key].grades.push({
                     subject: grade.subject_name,
-                    grade: parseFloat(grade.grade)
+                    grade: parseFloat(grade.grade),
+                    subject_id: grade.subject_id
                 });
             });
             
@@ -503,31 +504,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             Object.values(groupedGrades).forEach(student => {
                 const totalGrade = student.grades.reduce((sum, g) => sum + g.grade, 0);
                 const average = (totalGrade / student.grades.length).toFixed(1);
-                
                 html += `
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3 mb-3 border border-blue-100">
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 class="font-semibold text-gray-800 text-sm">${student.student_name}</h3>
-                                <p class="text-xs text-gray-600">NIS: ${student.student_id || 'Belum diisi'}</p>
-                                <p class="text-xs text-gray-600">Kelas ${student.class_name} • Semester ${student.semester}</p>
+                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px]">
+                        <div class="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-lg shrink-0">
+                            <span>${student.student_name.charAt(0)}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold text-gray-800 text-sm truncate" title="${student.student_name}">${student.student_name}</span>
+                                <span class="text-xs text-gray-500">Kls ${student.class_name} • Smt ${student.semester}</span>
                             </div>
-                            <div class="text-right">
-                                <div class="text-base font-bold text-blue-600">${totalGrade}</div>
-                                <div class="text-xs text-gray-500">Total Nilai</div>
-                                <div class="text-base font-bold text-blue-600">${average}</div>
-                                <div class="text-xs text-gray-500">Rata-rata</div>
+                            <div class="flex flex-wrap gap-1 mb-1">
+                                ${student.grades.map(g => `<span class='inline-block bg-blue-50 border border-blue-200 text-blue-700 rounded px-2 py-0.5 text-xs font-medium' title='${g.subject}'>${g.subject}: <span class='font-bold'>${g.grade}</span></span>`).join('')}
+                            </div>
+                            <div class="flex items-center justify-between mt-1">
+                                <span class="text-xs text-gray-500">Total: ${student.grades.length} mapel</span>
+                                <span class="text-xs text-gray-500">Rata-rata: <span class="font-bold text-blue-600">${average}</span></span>
                             </div>
                         </div>
-                        <div class="mb-2">
-                            <button onclick="showGradeDetails('${student.student_name}', '${student.class_name}', '${student.semester}', ${JSON.stringify(student.grades).replace(/"/g, '&quot;')})" 
-                                    class="text-blue-600 hover:text-blue-800 text-xs font-medium underline">
-                                Lihat Detail Nilai (${student.grades.length} mata pelajaran)
-                            </button>
-                        </div>
-                        <div class="text-xs text-gray-500 text-right">
-                            Total: ${student.grades.length} mapel
-                        </div>
+                        <button onclick="showGradeDetails('${student.student_name}', '${student.class_name}', '${student.semester}', ${JSON.stringify(student.grades).replace(/"/g, '&quot;')}, ${student.student_id}, '${student.class_name}')" class="ml-2 text-blue-600 hover:text-blue-800 text-xs font-medium underline shrink-0">Detail</button>
                     </div>
                 `;
             });
