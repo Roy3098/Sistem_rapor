@@ -52,44 +52,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $subject_id = $_POST['subject_id'];
                 $class_id = $_POST['class_id'];
                 $question_type = $_POST['question_type'];
-                $question_text = trim($_POST['question_text']);
-                $exam_id = null; // Selalu null agar createExam menyatukan soal berdasarkan kelas & mapel
-                
-                if (empty($subject_id) || empty($class_id) || empty($question_type) || empty($question_text)) {
-                    $error = 'Harap lengkapi semua field!';
+                $exam_id = null;
+                $success_count = 0;
+                $errors = [];
+                if ($question_type === 'essay') {
+                    $essay_questions = trim($_POST['essay_questions'] ?? '');
+                    $lines = array_filter(array_map('trim', explode("\n", $essay_questions)));
+                    foreach ($lines as $line) {
+                        $question_data = ['text' => $line];
+                        $result = createExam($subject_id, $class_id, 'questions', null, 'essay', $question_data, $exam_id);
+                        if ($result['success']) {
+                            $success_count++;
+                        } else {
+                            $errors[] = $result['message'];
+                        }
+                    }
+                } elseif ($question_type === 'multiple_choice') {
+                    $mc_questions = $_POST['mc_question'] ?? [];
+                    $option_a = $_POST['option_a'] ?? [];
+                    $option_b = $_POST['option_b'] ?? [];
+                    $option_c = $_POST['option_c'] ?? [];
+                    $option_d = $_POST['option_d'] ?? [];
+                    $correct_answer = $_POST['correct_answer'] ?? [];
+                    for ($i = 0; $i < count($mc_questions); $i++) {
+                        $q = trim($mc_questions[$i]);
+                        if ($q === '' || empty($option_a[$i]) || empty($option_b[$i]) || empty($option_c[$i]) || empty($option_d[$i]) || empty($correct_answer[$i])) {
+                            $errors[] = 'Ada soal pilihan ganda yang belum lengkap.';
+                            continue;
+                        }
+                        $question_data = [
+                            'text' => $q,
+                            'option_a' => $option_a[$i],
+                            'option_b' => $option_b[$i],
+                            'option_c' => $option_c[$i],
+                            'option_d' => $option_d[$i],
+                            'correct_answer' => strtoupper($correct_answer[$i])
+                        ];
+                        $result = createExam($subject_id, $class_id, 'questions', null, 'multiple_choice', $question_data, $exam_id);
+                        if ($result['success']) {
+                            $success_count++;
+                        } else {
+                            $errors[] = $result['message'];
+                        }
+                    }
+                }
+                if ($success_count > 0) {
+                    $message = "Berhasil menambah {$success_count} soal!";
+                    if (!empty($errors)) {
+                        $message .= " Namun ada error: " . implode(', ', $errors);
+                    }
                 } else {
-                    $question_data = ['text' => $question_text];
-                    
-                    if ($question_type === 'multiple_choice') {
-                        $option_a = trim($_POST['option_a'] ?? '');
-                        $option_b = trim($_POST['option_b'] ?? '');
-                        $option_c = trim($_POST['option_c'] ?? '');
-                        $option_d = trim($_POST['option_d'] ?? '');
-                        $correct_answer = strtoupper(trim($_POST['correct_answer'] ?? ''));
-                        
-                        if (empty($option_a) || empty($option_b) || empty($option_c) || empty($option_d) || empty($correct_answer)) {
-                            $error = 'Harap lengkapi semua pilihan jawaban!';
-                            break;
-                        }
-                        
-                        if (!in_array($correct_answer, ['A', 'B', 'C', 'D'])) {
-                            $error = 'Jawaban benar harus A, B, C, atau D!';
-                            break;
-                        }
-                        
-                        $question_data['option_a'] = $option_a;
-                        $question_data['option_b'] = $option_b;
-                        $question_data['option_c'] = $option_c;
-                        $question_data['option_d'] = $option_d;
-                        $question_data['correct_answer'] = $correct_answer;
-                    }
-                    
-                    $result = createExam($subject_id, $class_id, 'questions', null, $question_type, $question_data, $exam_id);
-                    if ($result['success']) {
-                        $message = $result['message'];
-                    } else {
-                        $error = $result['message'];
-                    }
+                    $error = 'Tidak ada soal yang berhasil disimpan. ' . implode(', ', $errors);
                 }
                 break;
                 
@@ -391,51 +404,23 @@ $exams = getExams();
                         </select>
                     </div>
                     <div class="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-2">
-                        <b>Catatan:</b> Soal essay dan pilihan ganda akan otomatis disatukan dalam satu file ujian jika kelas dan mata pelajaran sama.
+                        <b>Catatan:</b> Untuk soal essay, masukkan beberapa soal sekaligus (satu soal per baris). Untuk pilihan ganda, klik tombol tambah untuk menambah blok soal baru.
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tipe Soal</label>
-                        <select name="question_type" onchange="toggleQuestionFields()" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        <select name="question_type" id="questionTypeSelect" onchange="toggleQuestionFields()" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
                             <option value="">Pilih Tipe Soal</option>
                             <option value="essay">Essay</option>
                             <option value="multiple_choice">Pilihan Ganda</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Pertanyaan</label>
-                        <textarea name="question_text" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all h-32" placeholder="Tuliskan soal di sini..."></textarea>
+                    <div id="essayBlock" style="display:none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Soal Essay (satu soal per baris)</label>
+                        <textarea name="essay_questions" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all h-32" placeholder="Contoh:\nSebutkan rukun iman!\nApa ibukota Indonesia?\n..."></textarea>
                     </div>
-                    
-                    <!-- Multiple Choice Options -->
-                    <div id="mcOptions" style="display: none;">
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Pilihan A</label>
-                                <input type="text" name="option_a" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" placeholder="Pilihan A">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Pilihan B</label>
-                                <input type="text" name="option_b" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" placeholder="Pilihan B">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Pilihan C</label>
-                                <input type="text" name="option_c" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" placeholder="Pilihan C">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Pilihan D</label>
-                                <input type="text" name="option_d" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" placeholder="Pilihan D">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Jawaban Benar</label>
-                                <select name="correct_answer" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
-                                    <option value="">Pilih Jawaban Benar</option>
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="C">C</option>
-                                    <option value="D">D</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div id="mcBlocks" style="display:none;">
+                        <div id="mcContainer"></div>
+                        <button type="button" onclick="addMCBlock()" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-xs font-semibold">+ Tambah Soal Pilihan Ganda</button>
                     </div>
                 </div>
                 <div class="flex space-x-3 mt-6">

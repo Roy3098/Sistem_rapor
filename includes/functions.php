@@ -746,50 +746,36 @@ function getUserDetails($user_id) {
 
 // Word document generation function
 function generateWordDocument($exam) {
-    require_once 'vendor/autoload.php';
-    
-    $phpWord = new \PhpOffice\PhpWord\PhpWord();
-    $section = $phpWord->addSection();
-    
-    // Title
-    $section->addText($exam['title'], ['bold' => true, 'size' => 16]);
-    $section->addText('Mata Pelajaran: ' . $exam['subject_name'], ['size' => 12]);
-    $section->addText('Kelas: ' . $exam['class_name'], ['size' => 12]);
-    $section->addTextBreak(2);
-    
+    // TXT export
+    $db = getDbConnection();
+    $lines = [];
+    $lines[] = $exam['title'];
+    $lines[] = 'Mata Pelajaran: ' . $exam['subject_name'];
+    $lines[] = 'Kelas: ' . $exam['class_name'];
+    $lines[] = '';
     if ($exam['type'] === 'questions') {
-        // Get questions for this exam
-        $db = getDbConnection();
         $stmt = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
         $stmt->execute([$exam['id']]);
         $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
         $questionNumber = 1;
         foreach ($questions as $question) {
-            $section->addText($questionNumber . '. ' . $question['question_text'], ['size' => 12]);
-            
+            $lines[] = $questionNumber . '. ' . $question['question_text'];
             if ($question['question_type'] === 'multiple_choice') {
-                $section->addText('A. ' . $question['option_a'], ['size' => 11]);
-                $section->addText('B. ' . $question['option_b'], ['size' => 11]);
-                $section->addText('C. ' . $question['option_c'], ['size' => 11]);
-                $section->addText('D. ' . $question['option_d'], ['size' => 11]);
-                $section->addText('Jawaban: ' . $question['correct_answer'], ['bold' => true, 'size' => 11]);
+                $lines[] = '   A. ' . $question['option_a'];
+                $lines[] = '   B. ' . $question['option_b'];
+                $lines[] = '   C. ' . $question['option_c'];
+                $lines[] = '   D. ' . $question['option_d'];
+                $lines[] = '   Jawaban: ' . $question['correct_answer'];
             }
-            
-            $section->addTextBreak(2);
+            $lines[] = '';
             $questionNumber++;
         }
     }
-    
-    // Generate filename
-    $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $exam['title']) . '.docx';
-    
-    // Set headers for download
-    header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $exam['title']) . '.txt';
+    header('Content-Type: text/plain');
     header('Content-Disposition: attachment;filename="' . $filename . '"');
     header('Cache-Control: max-age=0');
-    
-    $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-    $writer->save('php://output');
+    echo implode("\n", $lines);
+    exit();
 }
 ?>
