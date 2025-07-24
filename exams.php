@@ -256,7 +256,11 @@ $exams = getExams();
                                     'all_ids' => [],
                                 ];
                             }
+                            // Selalu tambahkan id ke all_ids, dan gunakan exam id terkecil sebagai perwakilan
                             $grouped[$key]['all_ids'][] = $exam['id'];
+                            if ($exam['id'] < $grouped[$key]['exam']['id']) {
+                                $grouped[$key]['exam'] = $exam;
+                            }
                         } else {
                             $grouped['file_' . $exam['id']] = [ 'exam' => $exam ];
                         }
@@ -281,6 +285,7 @@ $exams = getExams();
                         } else {
                             // Gabungkan semua soal dari semua exam id
                             $allExamIds = isset($g['all_ids']) && is_array($g['all_ids']) ? array_unique($g['all_ids']) : [];
+                            sort($allExamIds);
                             $questions = [];
                             foreach ($allExamIds as $eid) {
                                 $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
