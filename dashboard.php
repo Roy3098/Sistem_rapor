@@ -387,7 +387,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             .then(data => {
                 const container = document.getElementById('topStudentsContainer');
                 container.innerHTML = '';
-                
                 if (data.success && data.data.length > 0) {
                     data.data.forEach((student, index) => {
                         const div = document.createElement('div');
@@ -410,10 +409,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                         container.appendChild(div);
                     });
                 } else {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada data siswa</p>';
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada data siswa atau nilai belum lengkap.</p>';
                 }
             })
-            .catch(error => console.error('Error loading top students:', error));
+            .catch(error => {
+                const container = document.getElementById('topStudentsContainer');
+                container.innerHTML = '<p class="text-red-500 text-center py-4">Gagal memuat data juara umum.</p>';
+                console.error('Error loading top students:', error);
+            });
         }
 
         // Load statistics on page load
