@@ -458,6 +458,31 @@ $exams = getExams();
         </div>
     </div>
 
+    <!-- Edit Question Modal -->
+    <div id="editQuestionModal" class="modal">
+        <div class="modal-content max-w-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Edit Soal</h2>
+            <form id="editQuestionForm">
+                <input type="hidden" name="question_id" id="editQuestionId">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pertanyaan</label>
+                    <textarea name="question_text" id="editQuestionText" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all h-24"></textarea>
+                </div>
+                <div id="editMCOptions" style="display:none;">
+                    <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan A</label><input type="text" name="option_a" id="editOptionA" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></div>
+                    <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan B</label><input type="text" name="option_b" id="editOptionB" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></div>
+                    <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan C</label><input type="text" name="option_c" id="editOptionC" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></div>
+                    <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan D</label><input type="text" name="option_d" id="editOptionD" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></div>
+                    <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Jawaban Benar</label><select name="correct_answer" id="editCorrectAnswer" class="w-full px-3 py-2 border border-gray-300 rounded-lg"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+                </div>
+                <div class="flex space-x-3 mt-6">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-all">Simpan</button>
+                    <button type="button" onclick="hideEditQuestionModal()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Question Details Modal -->
     <div id="detailsModal" class="modal">
         <div class="modal-content">
@@ -577,6 +602,61 @@ $exams = getExams();
         function hideDetailsModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
+
+        function showEditQuestionModal(questionId) {
+            // Ambil detail soal via AJAX
+            fetch('get_question_detail.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'question_id=' + questionId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('editQuestionId').value = data.question.id;
+                    document.getElementById('editQuestionText').value = data.question.question_text;
+                    if (data.question.question_type === 'multiple_choice') {
+                        document.getElementById('editMCOptions').style.display = 'block';
+                        document.getElementById('editOptionA').value = data.question.option_a;
+                        document.getElementById('editOptionB').value = data.question.option_b;
+                        document.getElementById('editOptionC').value = data.question.option_c;
+                        document.getElementById('editOptionD').value = data.question.option_d;
+                        document.getElementById('editCorrectAnswer').value = data.question.correct_answer;
+                    } else {
+                        document.getElementById('editMCOptions').style.display = 'none';
+                    }
+                    document.getElementById('editQuestionModal').style.display = 'flex';
+                } else {
+                    alert('Gagal memuat detail soal');
+                }
+            });
+        }
+
+        function hideEditQuestionModal() {
+            document.getElementById('editQuestionModal').style.display = 'none';
+        }
+
+        document.getElementById('editQuestionForm').onsubmit = function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('update_question.php', {
+                method: 'POST',
+                body: new URLSearchParams([...formData])
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Soal berhasil diupdate!');
+                    hideEditQuestionModal();
+                    // Refresh detail modal
+                    if (window.lastExamIdDetail) showQuestionDetails(window.lastExamIdDetail);
+                } else {
+                    alert('Gagal update soal: ' + data.message);
+                }
+            });
+        };
+        // Untuk memudahkan refresh detail setelah edit
+        window.showEditQuestionModal = showEditQuestionModal;
     </script>
 </body>
 </html>

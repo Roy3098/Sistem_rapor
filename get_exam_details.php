@@ -57,17 +57,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exam_id'])) {
             
             $html = "
                 <div class='space-y-3'>
-                    <div><strong>Mata Pelajaran:</strong> " . htmlspecialchars($exam['subject_name']) . "</div>
-                    <div><strong>Kelas:</strong> " . htmlspecialchars($exam['class_name']) . "</div>
-                    <div><strong>Tanggal Dibuat:</strong> " . date('d/m/Y H:i', strtotime($exam['created_at'])) . "</div>
-            ";
+                    <div class='flex justify-between items-center'>
+                        <div>
+                            <div><strong>Mata Pelajaran:</strong> " . htmlspecialchars($exam['subject_name']) . "</div>
+                            <div><strong>Kelas:</strong> " . htmlspecialchars($exam['class_name']) . "</div>
+                            <div><strong>Tanggal Dibuat:</strong> " . date('d/m/Y H:i', strtotime($exam['created_at'])) . "</div>
+                        </div>
+                        <div class='flex flex-col gap-2'>
+                            <a href='exams.php?action=download&id=" . $exam['id'] . "' target='_blank' class='bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold text-center mb-1'>⬇️ Download Soal</a>
+                        </div>
+                    </div>";
             
             if (!empty($questions)) {
                 $html .= "<div class='mt-4'><strong>Soal:</strong></div>";
                 foreach ($questions as $index => $question) {
                     $questionNum = $index + 1;
                     $html .= "<div class='bg-gray-100 p-3 rounded-lg mt-2'>";
-                    $html .= "<div class='font-semibold'>Soal {$questionNum}:</div>";
+                    $html .= "<div class='font-semibold flex justify-between items-center'>Soal {$questionNum}: <button class='text-blue-600 hover:underline text-xs font-medium' onclick=\"window.parent.showEditQuestionModal('{$question['id']}')\">Edit</button></div>";
                     $html .= "<div class='mt-1'>" . nl2br(htmlspecialchars($question['question_text'])) . "</div>";
                     
                     if ($question['question_type'] === 'multiple_choice') {
