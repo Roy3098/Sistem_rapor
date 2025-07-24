@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $class_id = $_POST['class_id'];
                 $question_type = $_POST['question_type'];
                 $question_text = trim($_POST['question_text']);
-                $exam_id = !empty($_POST['exam_id']) ? $_POST['exam_id'] : null;
+                $exam_id = null; // Selalu null agar createExam menyatukan soal berdasarkan kelas & mapel
                 
                 if (empty($subject_id) || empty($class_id) || empty($question_type) || empty($question_text)) {
                     $error = 'Harap lengkapi semua field!';
