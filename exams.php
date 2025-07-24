@@ -276,6 +276,11 @@ foreach ($exams as $exam):
         </div>
         <div class="flex justify-end space-x-2 mt-3">
             <a href="?action=download&id=<?php echo $exam['id']; ?>" class="text-purple-500 hover:text-purple-700 text-sm font-medium">⬇️ Unduh</a>
+            <form method="POST" style="display:inline;" onsubmit="return confirm('Hapus file soal ini?')">
+                <input type="hidden" name="action" value="delete_exam">
+                <input type="hidden" name="id" value="<?php echo $exam['id']; ?>">
+                <button type="submit" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-semibold hover:bg-red-200">🗑️ Hapus</button>
+            </form>
         </div>
     </div>
 <?php endforeach; ?>
