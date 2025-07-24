@@ -764,18 +764,22 @@ function generateWordDocument($exam) {
             $stmtQ->execute([$eid]);
             $questions = array_merge($questions, $stmtQ->fetchAll(PDO::FETCH_ASSOC));
         }
-        $questionNumber = 1;
-        foreach ($questions as $question) {
-            $lines[] = $questionNumber . '. ' . $question['question_text'];
-            if ($question['question_type'] === 'multiple_choice') {
-                $lines[] = '   A. ' . $question['option_a'];
-                $lines[] = '   B. ' . $question['option_b'];
-                $lines[] = '   C. ' . $question['option_c'];
-                $lines[] = '   D. ' . $question['option_d'];
-                $lines[] = '   Jawaban: ' . $question['correct_answer'];
+        if (empty($questions)) {
+            $lines[] = '(Belum ada soal)';
+        } else {
+            $questionNumber = 1;
+            foreach ($questions as $question) {
+                $lines[] = $questionNumber . '. ' . $question['question_text'];
+                if ($question['question_type'] === 'multiple_choice') {
+                    $lines[] = '   A. ' . $question['option_a'];
+                    $lines[] = '   B. ' . $question['option_b'];
+                    $lines[] = '   C. ' . $question['option_c'];
+                    $lines[] = '   D. ' . $question['option_d'];
+                    $lines[] = '   Jawaban: ' . $question['correct_answer'];
+                }
+                $lines[] = '';
+                $questionNumber++;
             }
-            $lines[] = '';
-            $questionNumber++;
         }
     }
     $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $exam['title']) . '.txt';

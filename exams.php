@@ -243,84 +243,89 @@ $exams = getExams();
             <div>
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Daftar Soal & File Ujian</h3>
                 <div class="space-y-3">
-                    <?php 
+                    <?php
                     // Gabungkan exam type=questions dengan kelas dan mapel yang sama
-                    $groupedExams = [];
+                    $db = getDbConnection();
+                    $grouped = [];
                     foreach ($exams as $exam) {
                         if ($exam['type'] === 'questions') {
                             $key = $exam['class_id'] . '_' . $exam['subject_id'];
-                            if (!isset($groupedExams[$key])) {
-                                $groupedExams[$key] = $exam;
-                                $groupedExams[$key]['_all_ids'] = [$exam['id']];
+                            if (!isset($grouped[$key])) {
+                                $grouped[$key] = [
+                                    'exam' => $exam,
+                                    'all_ids' => [$exam['id']],
+                                ];
                             } else {
-                                $groupedExams[$key]['_all_ids'][] = $exam['id'];
-                                // Gunakan exam dengan id terkecil sebagai perwakilan
-                                if ($exam['id'] < $groupedExams[$key]['id']) {
-                                    $groupedExams[$key] = $exam;
-                                    $groupedExams[$key]['_all_ids'] = [$exam['id']];
+                                $grouped[$key]['all_ids'][] = $exam['id'];
+                                if ($exam['id'] < $grouped[$key]['exam']['id']) {
+                                    $grouped[$key]['exam'] = $exam;
                                 }
                             }
                         } else {
-                            $groupedExams['file_' . $exam['id']] = $exam;
+                            $grouped['file_' . $exam['id']] = [ 'exam' => $exam ];
                         }
                     }
-                    // Tampilkan per kelas
-                    $lastClass = '';
-                    foreach ($groupedExams as $exam): 
-                        if ($lastClass !== $exam['class_name']):
-                            if ($lastClass !== '') echo '</div>';
-                            $lastClass = $exam['class_name'];
+                    foreach ($grouped as $g):
+                        $exam = $g['exam'];
+                        if ($exam['type'] === 'file') {
                     ?>
-                        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-3 rounded-lg font-semibold">
-                            Kelas <?php echo htmlspecialchars($exam['class_name']); ?>
-                        </div>
-                        <div class="ml-4 space-y-2">
-                    <?php endif; ?>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-600">Mata Pelajaran: <?php echo htmlspecialchars($exam['subject_name']); ?></p>
-                                <?php if ($exam['type'] === 'file'): ?>
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-600">Mata Pelajaran: <?php echo htmlspecialchars($exam['subject_name']); ?></p>
                                     <p class="text-sm text-gray-600">File: <?php echo htmlspecialchars($exam['file_name']); ?></p>
                                     <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">📁 File Ujian</span>
-                                <?php else: ?>
-                                    <?php
-                                    // Hitung jumlah soal dari semua exam dengan kelas dan mapel yang sama
-                                    $db = getDbConnection();
-                                    $stmt = $db->prepare("SELECT id FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions'");
-                                    $stmt->execute([$exam['class_id'], $exam['subject_id']]);
-                                    $allExamIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
-                                    $totalQuestions = 0;
-                                    foreach ($allExamIds as $eid) {
-                                        $stmtQ = $db->prepare("SELECT COUNT(*) FROM questions WHERE exam_id = ?");
-                                        $stmtQ->execute([$eid]);
-                                        $totalQuestions += (int)$stmtQ->fetchColumn();
-                                    }
-                                    ?>
-                                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mt-1">📝 Soal Ujian</span>
-                                    <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full mt-1 ml-2">Total Soal: <?php echo $totalQuestions; ?></span>
-                                <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 mt-3">
+                                <a href="?action=download&id=<?php echo $exam['id']; ?>" class="text-purple-500 hover:text-purple-700 text-sm font-medium">⬇️ Unduh</a>
                             </div>
                         </div>
-                        <div class="flex justify-end space-x-2 mt-3">
-                            <a href="?action=download&id=<?php echo $exam['id']; ?>" class="text-purple-500 hover:text-purple-700 text-sm font-medium">
-                                ⬇️ Unduh
-                            </a>
-                            <button onclick="showQuestionDetails(<?php echo $exam['id']; ?>)" class="text-blue-500 hover:text-blue-700 text-sm font-medium">
-                                👁️ Lihat
-                            </button>
-                            <form method="POST" style="display: inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus soal ini?')">
-                                <input type="hidden" name="action" value="delete_exam">
-                                <input type="hidden" name="id" value="<?php echo $exam['id']; ?>">
-                                <button type="submit" class="text-red-500 hover:text-red-700 text-sm font-medium">
-                                    🗑️ Hapus
-                                </button>
-                            </form>
+                    <?php
+                        } else {
+                            // Gabungkan semua soal dari semua exam id
+                            $allExamIds = $g['all_ids'];
+                            $questions = [];
+                            foreach ($allExamIds as $eid) {
+                                $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
+                                $stmtQ->execute([$eid]);
+                                $questions = array_merge($questions, $stmtQ->fetchAll(PDO::FETCH_ASSOC));
+                            }
+                            $totalQuestions = count($questions);
+                    ?>
+                        <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <div class="font-semibold text-gray-800 text-sm">Kelas <?php echo htmlspecialchars($exam['class_name']); ?> - <?php echo htmlspecialchars($exam['subject_name']); ?></div>
+                                    <div class="text-xs text-gray-500 mt-1">Total Soal: <span class="font-bold text-green-700"><?php echo $totalQuestions; ?></span></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="?action=download&id=<?php echo $exam['id']; ?>" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-semibold hover:bg-blue-200">⬇️ Download</a>
+                                    <button onclick="showQuestionDetails(<?php echo $exam['id']; ?>)" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-semibold hover:bg-green-200">👁️ Detail</button>
+                                </div>
+                            </div>
+                            <div class="mt-2 space-y-2">
+                                <?php
+                                $qnum = 1;
+                                foreach ($questions as $q):
+                                ?>
+                                <div class="bg-gray-50 border border-gray-100 rounded p-2 text-xs">
+                                    <div class="font-semibold text-gray-700 mb-1"><?php echo $qnum++; ?>. <?php echo htmlspecialchars($q['question_text']); ?></div>
+                                    <?php if ($q['question_type'] === 'multiple_choice'): ?>
+                                        <div class="ml-3">
+                                            <div>A. <?php echo htmlspecialchars($q['option_a']); ?></div>
+                                            <div>B. <?php echo htmlspecialchars($q['option_b']); ?></div>
+                                            <div>C. <?php echo htmlspecialchars($q['option_c']); ?></div>
+                                            <div>D. <?php echo htmlspecialchars($q['option_d']); ?></div>
+                                            <div class="mt-1 text-green-700 font-bold">Jawaban: <?php echo htmlspecialchars($q['correct_answer']); ?></div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    </div>
-                    <?php endforeach; ?>
-                    <?php if (!empty($groupedExams)) echo '</div>'; ?>
-                    <?php if (empty($groupedExams)): ?>
+                    <?php } endforeach; ?>
+                    <?php if (empty($grouped)): ?>
                         <div class="text-center py-8">
                             <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
