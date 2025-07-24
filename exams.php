@@ -244,55 +244,26 @@ $exams = getExams();
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Daftar Soal & File Ujian</h3>
                 <div class="space-y-3">
                     <?php
-                    // Gabungkan exam type=questions dengan kelas dan mapel yang sama
+                    // Ambil semua kombinasi kelas-mapel yang ada soal
                     $db = getDbConnection();
-                    $grouped = [];
-                    foreach ($exams as $exam) {
-                        if ($exam['type'] === 'questions') {
-                            $key = $exam['class_id'] . '_' . $exam['subject_id'];
-                            if (!isset($grouped[$key])) {
-                                $grouped[$key] = [
-                                    'exam' => $exam,
-                                    'all_ids' => [],
-                                ];
-                            }
-                            // Selalu tambahkan id ke all_ids, dan gunakan exam id terkecil sebagai perwakilan
-                            $grouped[$key]['all_ids'][] = $exam['id'];
-                            if ($exam['id'] < $grouped[$key]['exam']['id']) {
-                                $grouped[$key]['exam'] = $exam;
-                            }
-                        } else {
-                            $grouped['file_' . $exam['id']] = [ 'exam' => $exam ];
+                    $stmt = $db->query("SELECT class_id, subject_id FROM exams WHERE type = 'questions' GROUP BY class_id, subject_id");
+                    $groupedKeys = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($groupedKeys as $row):
+                        // Ambil exam perwakilan (id terkecil)
+                        $stmtExam = $db->prepare("SELECT * FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions' ORDER BY id ASC LIMIT 1");
+                        $stmtExam->execute([$row['class_id'], $row['subject_id']]);
+                        $exam = $stmtExam->fetch(PDO::FETCH_ASSOC);
+                        // Gabungkan semua soal dari semua exam id
+                        $stmtAllIds = $db->prepare("SELECT id FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions'");
+                        $stmtAllIds->execute([$row['class_id'], $row['subject_id']]);
+                        $allExamIds = array_column($stmtAllIds->fetchAll(PDO::FETCH_ASSOC), 'id');
+                        $questions = [];
+                        foreach ($allExamIds as $eid) {
+                            $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
+                            $stmtQ->execute([$eid]);
+                            $questions = array_merge($questions, $stmtQ->fetchAll(PDO::FETCH_ASSOC));
                         }
-                    }
-                    foreach ($grouped as $g):
-                        $exam = $g['exam'];
-                        if ($exam['type'] === 'file') {
-                    ?>
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="flex items-start justify-between mb-2">
-                                <div class="flex-1">
-                                    <p class="text-sm text-gray-600">Mata Pelajaran: <?php echo htmlspecialchars($exam['subject_name']); ?></p>
-                                    <p class="text-sm text-gray-600">File: <?php echo htmlspecialchars($exam['file_name']); ?></p>
-                                    <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">📁 File Ujian</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-end space-x-2 mt-3">
-                                <a href="?action=download&id=<?php echo $exam['id']; ?>" class="text-purple-500 hover:text-purple-700 text-sm font-medium">⬇️ Unduh</a>
-                            </div>
-                        </div>
-                    <?php
-                        } else {
-                            // Gabungkan semua soal dari semua exam id
-                            $allExamIds = isset($g['all_ids']) && is_array($g['all_ids']) ? array_unique($g['all_ids']) : [];
-                            sort($allExamIds);
-                            $questions = [];
-                            foreach ($allExamIds as $eid) {
-                                $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
-                                $stmtQ->execute([$eid]);
-                                $questions = array_merge($questions, $stmtQ->fetchAll(PDO::FETCH_ASSOC));
-                            }
-                            $totalQuestions = count($questions);
+                        $totalQuestions = count($questions);
                     ?>
                         <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
                             <div class="flex items-center justify-between mb-2">
@@ -325,7 +296,7 @@ $exams = getExams();
                                 <?php endforeach; ?>
                             </div>
                         </div>
-                    <?php } endforeach; ?>
+                    <?php endforeach; ?>
                     <?php if (empty($grouped)): ?>
                         <div class="text-center py-8">
                             <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
