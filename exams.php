@@ -284,7 +284,7 @@ $exams = getExams();
                     <?php
                         } else {
                             // Gabungkan semua soal dari semua exam id
-                            $allExamIds = $g['all_ids'];
+                            $allExamIds = isset($g['all_ids']) && is_array($g['all_ids']) ? $g['all_ids'] : [];
                             $questions = [];
                             foreach ($allExamIds as $eid) {
                                 $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
