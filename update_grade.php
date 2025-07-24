@@ -11,6 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'], $_POST[
     $subject_id = $_POST['subject_id'];
     $semester = $_POST['semester'];
     $grade = $_POST['grade'];
+    if ($grade > 90) {
+        echo json_encode(['success' => false, 'message' => 'Nilai maksimal adalah 90!']);
+        exit();
+    }
     $db = getDbConnection();
     // Update grade
     $stmt = $db->prepare("UPDATE grades SET grade = ? WHERE student_id = ? AND subject_id = ? AND semester = ?");

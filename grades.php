@@ -588,7 +588,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 <tr id='editRow${idx}' style='display:none;'>
                     <td colspan='3'>
                         <form onsubmit='submitEditGrade(event, ${idx}, ${studentId}, "${g.subject}", ${g.grade}, ${g.subject_id}, ${semester})' class='flex items-center gap-2'>
-                            <input type='number' min='0' max='100' id='editInput${idx}' value='${g.grade}' class='border px-2 py-1 rounded w-20'>
+                            <input type='number' min='0' max='90' id='editInput${idx}' value='${g.grade}' class='border px-2 py-1 rounded w-20'>
                             <button type='submit' class='bg-green-500 text-white px-3 py-1 rounded text-xs font-semibold'>Simpan</button>
                             <button type='button' onclick='hideEditGrade(${idx})' class='bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold'>Batal</button>
                         </form>
@@ -608,6 +608,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         function submitEditGrade(e, idx, studentId, subject, oldGrade, subjectId, semester) {
             e.preventDefault();
             const newGrade = document.getElementById('editInput'+idx).value;
+            if (newGrade > 90) {
+                alert('Nilai maksimal adalah 90!');
+                return;
+            }
             // Kirim update ke backend
             fetch('update_grade.php', {
                 method: 'POST',
