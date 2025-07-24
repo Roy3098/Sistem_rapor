@@ -232,17 +232,30 @@ $exams = getExams();
                 <div class="space-y-3">
                     <?php 
                     $currentClass = '';
-                    foreach ($exams as $exam): 
-                        if ($currentClass !== $exam['class_name']):
-                            if ($currentClass !== '') echo '</div>';
-                            $currentClass = $exam['class_name'];
+                    // Gabungkan exam type=questions dengan kelas dan mapel yang sama
+                    $groupedExams = [];
+                    foreach ($exams as $exam) {
+                        if ($exam['type'] === 'questions') {
+                            $key = $exam['class_id'] . '_' . $exam['subject_id'];
+                            if (!isset($groupedExams[$key])) {
+                                $groupedExams[$key] = $exam;
+                            }
+                        } else {
+                            $groupedExams['file_' . $exam['id']] = $exam;
+                        }
+                    }
+                    // Tampilkan per kelas
+                    $lastClass = '';
+                    foreach ($groupedExams as $exam): 
+                        if ($lastClass !== $exam['class_name']):
+                            if ($lastClass !== '') echo '</div>';
+                            $lastClass = $exam['class_name'];
                     ?>
                         <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-3 rounded-lg font-semibold">
                             Kelas <?php echo htmlspecialchars($exam['class_name']); ?>
                         </div>
                         <div class="ml-4 space-y-2">
                     <?php endif; ?>
-                    
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div class="flex items-start justify-between mb-2">
                             <div class="flex-1">
@@ -251,18 +264,7 @@ $exams = getExams();
                                     <p class="text-sm text-gray-600">File: <?php echo htmlspecialchars($exam['file_name']); ?></p>
                                     <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">📁 File Ujian</span>
                                 <?php else: ?>
-                                    <?php
-                                    // Get question type from questions table
-                                    $db = getDbConnection();
-                                    $stmt = $db->prepare("SELECT question_type FROM questions WHERE exam_id = ? LIMIT 1");
-                                    $stmt->execute([$exam['id']]);
-                                    $question = $stmt->fetch(PDO::FETCH_ASSOC);
-                                    $questionType = $question ? $question['question_type'] : 'unknown';
-                                    ?>
-                                    <p class="text-sm text-gray-600">Tipe: <?php echo $questionType === 'essay' ? 'Essay' : ($questionType === 'multiple_choice' ? 'Pilihan Ganda' : 'Tidak diketahui'); ?></p>
-                                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mt-1">
-                                        <?php echo $questionType === 'essay' ? '✏️ Soal Essay' : ($questionType === 'multiple_choice' ? '☑️ Pilihan Ganda' : '❓ Soal'); ?>
-                                    </span>
+                                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mt-1">📝 Soal Ujian</span>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -282,11 +284,9 @@ $exams = getExams();
                             </form>
                         </div>
                     </div>
-                    
                     <?php endforeach; ?>
-                    <?php if (!empty($exams)) echo '</div>'; ?>
-                    
-                    <?php if (empty($exams)): ?>
+                    <?php if (!empty($groupedExams)) echo '</div>'; ?>
+                    <?php if (empty($groupedExams)): ?>
                         <div class="text-center py-8">
                             <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
