@@ -284,7 +284,21 @@ $exams = getExams();
                                     <p class="text-sm text-gray-600">File: <?php echo htmlspecialchars($exam['file_name']); ?></p>
                                     <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">📁 File Ujian</span>
                                 <?php else: ?>
+                                    <?php
+                                    // Hitung jumlah soal dari semua exam dengan kelas dan mapel yang sama
+                                    $db = getDbConnection();
+                                    $stmt = $db->prepare("SELECT id FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions'");
+                                    $stmt->execute([$exam['class_id'], $exam['subject_id']]);
+                                    $allExamIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+                                    $totalQuestions = 0;
+                                    foreach ($allExamIds as $eid) {
+                                        $stmtQ = $db->prepare("SELECT COUNT(*) FROM questions WHERE exam_id = ?");
+                                        $stmtQ->execute([$eid]);
+                                        $totalQuestions += (int)$stmtQ->fetchColumn();
+                                    }
+                                    ?>
                                     <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mt-1">📝 Soal Ujian</span>
+                                    <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full mt-1 ml-2">Total Soal: <?php echo $totalQuestions; ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>
