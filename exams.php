@@ -259,22 +259,26 @@ $exams = getExams();
                     // Pastikan $db sudah diinisialisasi
                     if (!isset($db) || !$db) { $db = getDbConnection(); }
                     // Tampilkan file ujian (type=file)
-                    $stmtFiles = $db->query("SELECT * FROM exams WHERE type = 'file'");
-                    $fileExams = $stmtFiles->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($fileExams as $exam): ?>
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="flex items-start justify-between mb-2">
-                                <div class="flex-1">
-                                    <p class="text-sm text-gray-600">Mata Pelajaran: <?php echo htmlspecialchars($exam['subject_name']); ?></p>
-                                    <p class="text-sm text-gray-600">File: <?php echo htmlspecialchars($exam['file_name']); ?></p>
-                                    <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">📁 File Ujian</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-end space-x-2 mt-3">
-                                <a href="?action=download&id=<?php echo $exam['id']; ?>" class="text-purple-500 hover:text-purple-700 text-sm font-medium">⬇️ Unduh</a>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                    // $stmtFiles = $db->query("SELECT * FROM exams WHERE type = 'file'");
+                    // $fileExams = $stmtFiles->fetchAll(PDO::FETCH_ASSOC);
+                    // foreach ($fileExams as $exam): ?>
+<?php
+foreach ($exams as $exam):
+    if ($exam['type'] !== 'file') continue;
+?>
+    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+                <p class="text-sm text-gray-600">Mata Pelajaran: <?php echo htmlspecialchars($exam['subject_name']); ?></p>
+                <p class="text-sm text-gray-600">File: <?php echo htmlspecialchars($exam['file_name']); ?></p>
+                <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">📁 File Ujian</span>
+            </div>
+        </div>
+        <div class="flex justify-end space-x-2 mt-3">
+            <a href="?action=download&id=<?php echo $exam['id']; ?>" class="text-purple-500 hover:text-purple-700 text-sm font-medium">⬇️ Unduh</a>
+        </div>
+    </div>
+<?php endforeach; ?>
                     <?php
                     // Ambil semua kombinasi kelas-mapel yang ada soal
                     $db = getDbConnection();
