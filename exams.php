@@ -285,6 +285,13 @@ $exams = getExams();
                         $stmtExam = $db->prepare("SELECT * FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions' ORDER BY id ASC LIMIT 1");
                         $stmtExam->execute([$row['class_id'], $row['subject_id']]);
                         $exam = $stmtExam->fetch(PDO::FETCH_ASSOC);
+                        // Ambil nama kelas dan mapel
+                        $stmtClass = $db->prepare("SELECT name FROM classes WHERE id = ?");
+                        $stmtClass->execute([$row['class_id']]);
+                        $className = $stmtClass->fetchColumn();
+                        $stmtSubject = $db->prepare("SELECT name FROM subjects WHERE id = ?");
+                        $stmtSubject->execute([$row['subject_id']]);
+                        $subjectName = $stmtSubject->fetchColumn();
                         // Gabungkan semua soal dari semua exam id
                         $stmtAllIds = $db->prepare("SELECT id FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions'");
                         $stmtAllIds->execute([$row['class_id'], $row['subject_id']]);
@@ -301,7 +308,7 @@ $exams = getExams();
                         <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
                             <div class="flex items-center justify-between mb-2">
                                 <div>
-                                    <div class="font-semibold text-gray-800 text-sm">Kelas <?php echo htmlspecialchars($exam['class_name']); ?> - <?php echo htmlspecialchars($exam['subject_name']); ?></div>
+                                    <div class="font-semibold text-gray-800 text-sm">Kelas <?php echo htmlspecialchars($className); ?> - <?php echo htmlspecialchars($subjectName); ?></div>
                                     <div class="text-xs text-gray-500 mt-1">Total Soal: <span class="font-bold text-green-700"><?php echo $totalQuestions; ?></span></div>
                                 </div>
                                 <div class="flex gap-2">
