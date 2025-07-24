@@ -115,6 +115,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = $result['message'];
                 }
                 break;
+
+            case 'delete_exam_group':
+                $class_id = $_POST['class_id'];
+                $subject_id = $_POST['subject_id'];
+                $db = getDbConnection();
+                $stmt = $db->prepare("DELETE FROM exams WHERE class_id = ? AND subject_id = ?");
+                if ($stmt->execute([$class_id, $subject_id])) {
+                    $message = "Semua soal untuk kelas {$class_id} - {$subject_id} berhasil dihapus.";
+                } else {
+                    $error = "Gagal menghapus soal: " . $stmt->errorInfo()[2];
+                }
+                break;
         }
     }
 }
@@ -265,6 +277,7 @@ $exams = getExams();
                     <?php endforeach; ?>
                     <?php
                     // Ambil semua kombinasi kelas-mapel yang ada soal
+                    $db = getDbConnection();
                     $stmt = $db->query("SELECT class_id, subject_id FROM exams WHERE type = 'questions' GROUP BY class_id, subject_id");
                     $groupedKeys = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($groupedKeys as $row):
@@ -283,6 +296,7 @@ $exams = getExams();
                             $questions = array_merge($questions, $stmtQ->fetchAll(PDO::FETCH_ASSOC));
                         }
                         $totalQuestions = count($questions);
+                        if ($totalQuestions === 0) continue;
                     ?>
                         <div class="bg-white rounded-lg p-4 border border-green-200 shadow-sm">
                             <div class="flex items-center justify-between mb-2">
@@ -293,6 +307,12 @@ $exams = getExams();
                                 <div class="flex gap-2">
                                     <a href="?action=download&id=<?php echo $exam['id']; ?>" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-semibold hover:bg-blue-200">⬇️ Download</a>
                                     <button onclick="showQuestionDetails(<?php echo $exam['id']; ?>)" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-semibold hover:bg-green-200">👁️ Detail</button>
+                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Hapus semua soal untuk kelas dan mapel ini?')">
+                                        <input type="hidden" name="action" value="delete_exam_group">
+                                        <input type="hidden" name="class_id" value="<?php echo $exam['class_id']; ?>">
+                                        <input type="hidden" name="subject_id" value="<?php echo $exam['subject_id']; ?>">
+                                        <button type="submit" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-semibold hover:bg-red-200">🗑️ Hapus</button>
+                                    </form>
                                 </div>
                             </div>
                             <div class="mt-2 space-y-2">
