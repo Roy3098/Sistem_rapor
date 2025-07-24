@@ -390,16 +390,8 @@ $exams = getExams();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Ujian (opsional, untuk menambah soal ke ujian yang sudah ada)</label>
-                        <select name="exam_id" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
-                            <option value="">Buat Ujian Baru</option>
-                            <?php foreach ($exams as $exam): ?>
-                                <?php if ($exam['type'] === 'questions'): ?>
-                                    <option value="<?php echo $exam['id']; ?>">Ujian: <?php echo htmlspecialchars($exam['title']); ?> (<?php echo htmlspecialchars($exam['subject_name']); ?> - Kelas <?php echo htmlspecialchars($exam['class_name']); ?>)</option>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                        <b>Catatan:</b> Soal essay dan pilihan ganda akan otomatis disatukan dalam satu file ujian jika kelas dan mata pelajaran sama.
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tipe Soal</label>
