@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $class_id = $_POST['class_id'];
                 $question_type = $_POST['question_type'];
                 $question_text = trim($_POST['question_text']);
+                $exam_id = !empty($_POST['exam_id']) ? $_POST['exam_id'] : null;
                 
                 if (empty($subject_id) || empty($class_id) || empty($question_type) || empty($question_text)) {
                     $error = 'Harap lengkapi semua field!';
@@ -83,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $question_data['correct_answer'] = $correct_answer;
                     }
                     
-                    $result = createExam($subject_id, $class_id, 'questions', null, $question_type, $question_data);
+                    $result = createExam($subject_id, $class_id, 'questions', null, $question_type, $question_data, $exam_id);
                     if ($result['success']) {
                         $message = $result['message'];
                     } else {
@@ -386,6 +387,17 @@ $exams = getExams();
                             <option value="">Pilih Kelas</option>
                             <?php foreach ($classes as $class): ?>
                                 <option value="<?php echo $class['id']; ?>"><?php echo htmlspecialchars($class['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Ujian (opsional, untuk menambah soal ke ujian yang sudah ada)</label>
+                        <select name="exam_id" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                            <option value="">Buat Ujian Baru</option>
+                            <?php foreach ($exams as $exam): ?>
+                                <?php if ($exam['type'] === 'questions'): ?>
+                                    <option value="<?php echo $exam['id']; ?>">Ujian: <?php echo htmlspecialchars($exam['title']); ?> (<?php echo htmlspecialchars($exam['subject_name']); ?> - Kelas <?php echo htmlspecialchars($exam['class_name']); ?>)</option>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </select>
                     </div>
