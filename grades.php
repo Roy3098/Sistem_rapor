@@ -576,13 +576,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         function showGradeDetails(studentName, className, semester, grades) {
             document.getElementById('modalStudentName').textContent = studentName;
             document.getElementById('modalStudentInfo').textContent = `Kelas ${className} • Semester ${semester}`;
-            let html = '<table class="w-full text-sm"><thead><tr><th class="text-left py-1">Mata Pelajaran</th><th class="text-right py-1">Nilai</th></tr></thead><tbody>';
-            grades.forEach(g => {
-                html += `<tr><td class="py-1">${g.subject}</td><td class="py-1 text-right font-semibold">${g.grade}</td></tr>`;
+            let html = '<table class="w-full text-sm"><thead><tr><th class="text-left py-1">Mata Pelajaran</th><th class="text-right py-1">Nilai</th><th></th></tr></thead><tbody>';
+            grades.forEach((g, idx) => {
+                html += `<tr>
+                    <td class='py-1'>${g.subject}</td>
+                    <td class='py-1 text-right font-semibold' id='gradeValue${idx}'>${g.grade}</td>
+                    <td class='py-1 text-right'>
+                        <button class='text-blue-600 hover:underline text-xs font-medium' onclick='showEditGrade(${idx}, "${g.subject}", ${g.grade})'>Edit</button>
+                    </td>
+                </tr>
+                <tr id='editRow${idx}' style='display:none;'>
+                    <td colspan='3'>
+                        <form onsubmit='submitEditGrade(event, ${idx}, "${g.subject}", ${g.grade})' class='flex items-center gap-2'>
+                            <input type='number' min='0' max='100' id='editInput${idx}' value='${g.grade}' class='border px-2 py-1 rounded w-20'>
+                            <button type='submit' class='bg-green-500 text-white px-3 py-1 rounded text-xs font-semibold'>Simpan</button>
+                            <button type='button' onclick='hideEditGrade(${idx})' class='bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold'>Batal</button>
+                        </form>
+                    </td>
+                </tr>`;
             });
             html += '</tbody></table>';
             document.getElementById('modalGradesList').innerHTML = html;
             document.getElementById('gradeDetailModal').classList.remove('hidden');
+        }
+        function showEditGrade(idx, subject, grade) {
+            document.getElementById('editRow'+idx).style.display = '';
+        }
+        function hideEditGrade(idx) {
+            document.getElementById('editRow'+idx).style.display = 'none';
+        }
+        function submitEditGrade(e, idx, subject, oldGrade) {
+            e.preventDefault();
+            const newGrade = document.getElementById('editInput'+idx).value;
+            // Kirim update ke backend
+            fetch('update_grade.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `student_name=${encodeURIComponent(document.getElementById('modalStudentName').textContent)}&subject=${encodeURIComponent(subject)}&semester=${encodeURIComponent(document.getElementById('modalStudentInfo').textContent.match(/Semester (\d+)/)[1])}&grade=${newGrade}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('gradeValue'+idx).textContent = newGrade;
+                    hideEditGrade(idx);
+                } else {
+                    alert('Gagal update nilai: ' + data.message);
+                }
+            });
         }
         function closeGradeDetailModal() {
             document.getElementById('gradeDetailModal').classList.add('hidden');
