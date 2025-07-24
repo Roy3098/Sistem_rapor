@@ -534,22 +534,38 @@ $exams = getExams();
         }
 
         function toggleQuestionFields() {
-            const questionType = document.querySelector('select[name="question_type"]').value;
-            const mcOptions = document.getElementById('mcOptions');
-            
-            if (questionType === 'multiple_choice') {
-                mcOptions.style.display = 'block';
-                // Make MC fields required
-                mcOptions.querySelectorAll('input, select').forEach(field => {
-                    field.required = true;
-                });
-            } else {
-                mcOptions.style.display = 'none';
-                // Remove required from MC fields
-                mcOptions.querySelectorAll('input, select').forEach(field => {
-                    field.required = false;
-                });
-            }
+            const type = document.getElementById('questionTypeSelect').value;
+            document.getElementById('essayBlock').style.display = type === 'essay' ? '' : 'none';
+            document.getElementById('mcBlocks').style.display = type === 'multiple_choice' ? '' : 'none';
+        }
+
+        let mcIndex = 0;
+        function addMCBlock() {
+            const container = document.getElementById('mcContainer');
+            const idx = mcIndex++;
+            const block = document.createElement('div');
+            block.className = 'border border-blue-200 rounded-lg p-3 mb-2 bg-blue-50';
+            block.innerHTML = `
+                <div class='flex justify-between items-center mb-2'>
+                    <span class='font-semibold text-blue-700'>Soal Pilihan Ganda</span>
+                    <button type='button' onclick='this.parentNode.parentNode.remove()' class='text-red-500 text-xs font-bold'>Hapus</button>
+                </div>
+                <textarea name='mc_question[]' required class='w-full px-2 py-1 border border-gray-300 rounded mb-2' placeholder='Tulis pertanyaan...'></textarea>
+                <div class='grid grid-cols-2 gap-2 mb-2'>
+                    <input name='option_a[]' required class='px-2 py-1 border border-gray-300 rounded' placeholder='Pilihan A'>
+                    <input name='option_b[]' required class='px-2 py-1 border border-gray-300 rounded' placeholder='Pilihan B'>
+                    <input name='option_c[]' required class='px-2 py-1 border border-gray-300 rounded' placeholder='Pilihan C'>
+                    <input name='option_d[]' required class='px-2 py-1 border border-gray-300 rounded' placeholder='Pilihan D'>
+                </div>
+                <select name='correct_answer[]' required class='w-full px-2 py-1 border border-gray-300 rounded'>
+                    <option value=''>Jawaban Benar</option>
+                    <option value='A'>A</option>
+                    <option value='B'>B</option>
+                    <option value='C'>C</option>
+                    <option value='D'>D</option>
+                </select>
+            `;
+            container.appendChild(block);
         }
 
         function showQuestionDetails(examId) {
@@ -634,6 +650,25 @@ $exams = getExams();
         };
         // Untuk memudahkan refresh detail setelah edit
         window.showEditQuestionModal = showEditQuestionModal;
+
+        document.getElementById('questionForm').onsubmit = function(e) {
+            const type = document.getElementById('questionTypeSelect').value;
+            if (type === 'essay') {
+                const val = document.querySelector('[name=essay_questions]').value.trim();
+                if (!val) {
+                    alert('Masukkan minimal satu soal essay!');
+                    e.preventDefault();
+                    return false;
+                }
+            } else if (type === 'multiple_choice') {
+                const mcBlocks = document.querySelectorAll('#mcContainer > div');
+                if (mcBlocks.length === 0) {
+                    alert('Tambahkan minimal satu soal pilihan ganda!');
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        };
     </script>
 </body>
 </html>
