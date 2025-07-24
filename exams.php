@@ -253,14 +253,10 @@ $exams = getExams();
                             if (!isset($grouped[$key])) {
                                 $grouped[$key] = [
                                     'exam' => $exam,
-                                    'all_ids' => [$exam['id']],
+                                    'all_ids' => [],
                                 ];
-                            } else {
-                                $grouped[$key]['all_ids'][] = $exam['id'];
-                                if ($exam['id'] < $grouped[$key]['exam']['id']) {
-                                    $grouped[$key]['exam'] = $exam;
-                                }
                             }
+                            $grouped[$key]['all_ids'][] = $exam['id'];
                         } else {
                             $grouped['file_' . $exam['id']] = [ 'exam' => $exam ];
                         }
@@ -284,7 +280,7 @@ $exams = getExams();
                     <?php
                         } else {
                             // Gabungkan semua soal dari semua exam id
-                            $allExamIds = isset($g['all_ids']) && is_array($g['all_ids']) ? $g['all_ids'] : [];
+                            $allExamIds = isset($g['all_ids']) && is_array($g['all_ids']) ? array_unique($g['all_ids']) : [];
                             $questions = [];
                             foreach ($allExamIds as $eid) {
                                 $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
