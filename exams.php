@@ -561,19 +561,7 @@ $exams = getExams();
                 alert('Error loading exam details');
             });
         }
-        function showQuestionDetails(examId) {
-            // This would typically fetch exam details via AJAX
-            // For now, we'll show a placeholder
-            const content = document.getElementById('questionDetailsContent');
-            content.innerHTML = '<p>Loading details...</p>';
-            document.getElementById('detailsModal').style.display = 'flex';
-            
-            // Fetch details via AJAX (implementation would go here)
-        }
 
-        function hideDetailsModal() {
-            document.getElementById('detailsModal').style.display = 'none';
-        }
         function hideDetailsModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
