@@ -754,9 +754,16 @@ function generateWordDocument($exam) {
     $lines[] = 'Kelas: ' . $exam['class_name'];
     $lines[] = '';
     if ($exam['type'] === 'questions') {
-        $stmt = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
-        $stmt->execute([$exam['id']]);
-        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Cari semua exam id untuk kelas dan mapel yang sama
+        $stmt = $db->prepare("SELECT id FROM exams WHERE class_id = ? AND subject_id = ? AND type = 'questions' ORDER BY id");
+        $stmt->execute([$exam['class_id'], $exam['subject_id']]);
+        $allExamIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+        $questions = [];
+        foreach ($allExamIds as $eid) {
+            $stmtQ = $db->prepare("SELECT * FROM questions WHERE exam_id = ? ORDER BY id");
+            $stmtQ->execute([$eid]);
+            $questions = array_merge($questions, $stmtQ->fetchAll(PDO::FETCH_ASSOC));
+        }
         $questionNumber = 1;
         foreach ($questions as $question) {
             $lines[] = $questionNumber . '. ' . $question['question_text'];
