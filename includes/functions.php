@@ -576,19 +576,39 @@ function createExam($subject_id, $class_id, $type, $file_data = null, $question_
                 }
             }
         } else {
-            // Buat exam baru jika exam_id tidak diberikan
-            $stmt = $db->prepare("INSERT INTO exams (title, subject_id, class_id, type) VALUES (?, ?, ?, ?)");
-            if ($stmt->execute([$title, $subject_id, $class_id, $type])) {
-                $new_exam_id = $db->lastInsertId();
+            // Cek apakah sudah ada exam dengan subject_id, class_id, type=questions
+            $stmt = $db->prepare("SELECT id FROM exams WHERE subject_id = ? AND class_id = ? AND type = 'questions' LIMIT 1");
+            $stmt->execute([$subject_id, $class_id]);
+            $existing_exam = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($existing_exam) {
+                $existing_exam_id = $existing_exam['id'];
+                // Tambahkan soal ke exam yang sudah ada
                 if ($question_type === 'essay') {
                     $stmt = $db->prepare("INSERT INTO questions (exam_id, question_text, question_type) VALUES (?, ?, ?)");
-                    if ($stmt->execute([$new_exam_id, $question_data['text'], $question_type])) {
-                        return ['success' => true, 'message' => 'Soal essay berhasil dibuat!'];
+                    if ($stmt->execute([$existing_exam_id, $question_data['text'], $question_type])) {
+                        return ['success' => true, 'message' => 'Soal essay berhasil ditambahkan ke ujian!'];
                     }
                 } elseif ($question_type === 'multiple_choice') {
                     $stmt = $db->prepare("INSERT INTO questions (exam_id, question_text, question_type, option_a, option_b, option_c, option_d, correct_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                    if ($stmt->execute([$new_exam_id, $question_data['text'], $question_type, $question_data['option_a'], $question_data['option_b'], $question_data['option_c'], $question_data['option_d'], $question_data['correct_answer']])) {
-                        return ['success' => true, 'message' => 'Soal pilihan ganda berhasil dibuat!'];
+                    if ($stmt->execute([$existing_exam_id, $question_data['text'], $question_type, $question_data['option_a'], $question_data['option_b'], $question_data['option_c'], $question_data['option_d'], $question_data['correct_answer']])) {
+                        return ['success' => true, 'message' => 'Soal pilihan ganda berhasil ditambahkan ke ujian!'];
+                    }
+                }
+            } else {
+                // Buat exam baru jika belum ada
+                $stmt = $db->prepare("INSERT INTO exams (title, subject_id, class_id, type) VALUES (?, ?, ?, ?)");
+                if ($stmt->execute([$title, $subject_id, $class_id, $type])) {
+                    $new_exam_id = $db->lastInsertId();
+                    if ($question_type === 'essay') {
+                        $stmt = $db->prepare("INSERT INTO questions (exam_id, question_text, question_type) VALUES (?, ?, ?)");
+                        if ($stmt->execute([$new_exam_id, $question_data['text'], $question_type])) {
+                            return ['success' => true, 'message' => 'Soal essay berhasil dibuat!'];
+                        }
+                    } elseif ($question_type === 'multiple_choice') {
+                        $stmt = $db->prepare("INSERT INTO questions (exam_id, question_text, question_type, option_a, option_b, option_c, option_d, correct_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        if ($stmt->execute([$new_exam_id, $question_data['text'], $question_type, $question_data['option_a'], $question_data['option_b'], $question_data['option_c'], $question_data['option_d'], $question_data['correct_answer']])) {
+                            return ['success' => true, 'message' => 'Soal pilihan ganda berhasil dibuat!'];
+                        }
                     }
                 }
             }
