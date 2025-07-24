@@ -244,6 +244,8 @@ $exams = getExams();
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Daftar Soal & File Ujian</h3>
                 <div class="space-y-3">
                     <?php
+                    // Pastikan $db sudah diinisialisasi
+                    if (!isset($db) || !$db) { $db = getDbConnection(); }
                     // Tampilkan file ujian (type=file)
                     $stmtFiles = $db->query("SELECT * FROM exams WHERE type = 'file'");
                     $fileExams = $stmtFiles->fetchAll(PDO::FETCH_ASSOC);
