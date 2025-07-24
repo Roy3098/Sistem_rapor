@@ -548,5 +548,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             return true;
         }
     </script>
+
+    <!-- MODAL DETAIL NILAI -->
+    <div id="gradeDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-fadeIn">
+            <button onclick="closeGradeDetailModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-800 mb-2" id="modalStudentName">Detail Nilai</h2>
+            <div class="text-sm text-gray-600 mb-2" id="modalStudentInfo"></div>
+            <div id="modalGradesList" class="mb-4"></div>
+            <div class="flex justify-end">
+                <button onclick="closeGradeDetailModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">Tutup</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.3s; }
+    </style>
+    <script>
+        function showGradeDetails(studentName, className, semester, grades) {
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalStudentInfo').textContent = `Kelas ${className} • Semester ${semester}`;
+            let html = '<table class="w-full text-sm"><thead><tr><th class="text-left py-1">Mata Pelajaran</th><th class="text-right py-1">Nilai</th></tr></thead><tbody>';
+            grades.forEach(g => {
+                html += `<tr><td class="py-1">${g.subject}</td><td class="py-1 text-right font-semibold">${g.grade}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('modalGradesList').innerHTML = html;
+            document.getElementById('gradeDetailModal').classList.remove('hidden');
+        }
+        function closeGradeDetailModal() {
+            document.getElementById('gradeDetailModal').classList.add('hidden');
+        }
+        // Optional: close modal on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeGradeDetailModal();
+        });
+    </script>
 </body>
 </html>
