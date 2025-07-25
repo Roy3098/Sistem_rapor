@@ -151,6 +151,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Setelah berhasil menambah soal, refresh halaman agar daftar soal update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_question') {
+    if (empty($error)) {
+        echo '<script>alert("Soal berhasil ditambahkan!"); window.location.reload();</script>';
+        exit();
+    } else {
+        echo '<script>alert("Gagal menambah soal: ' . addslashes($error) . '");</script>';
+    }
+}
+
 // Handle download requests
 if (isset($_GET['action']) && $_GET['action'] === 'download' && isset($_GET['id'])) {
     $exam = getExamById($_GET['id']);

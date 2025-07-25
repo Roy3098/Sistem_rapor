@@ -563,8 +563,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         // Setelah update/hapus nilai di modal, reload daftar nilai
         function afterGradeChange() {
             loadResults();
-            closeGradeDetailModal();
+            // Tutup modal dan buka lagi untuk refresh data detail jika sedang terbuka
+            if (!document.getElementById('gradeDetailModal').classList.contains('hidden')) {
+                setTimeout(() => {
+                    closeGradeDetailModal();
+                }, 200);
+            }
         }
+        // Pastikan loadResults mengambil data terbaru dari server
+        function loadResults() {
+            // Implementasi pengambilan data terbaru dari server (AJAX fetch ke endpoint yang menampilkan nilai)
+            fetch(window.location.href, {cache: 'reload'})
+                .then(res => res.text())
+                .then(html => {
+                    // Ambil elemen utama daftar nilai
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newList = doc.querySelector('#gradesList');
+                    if (newList) {
+                        document.querySelector('#gradesList').innerHTML = newList.innerHTML;
+                    }
+                });
+        }
+        // Tambahkan notifikasi jika gagal update/hapus nilai
+        function submitEditGrade(e, idx, studentId, subject, oldGrade, subjectId, semester, academicYear) {
+            e.preventDefault();
+            const newGrade = document.getElementById('editInput'+idx).value;
+            if (newGrade > 90) {
+                alert('Nilai maksimal adalah 90!');
+                return;
+            }
+            let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}&grade=${newGrade}`;
+            if (academicYear) body += `&academic_year=${academicYear}`;
+            fetch('update_grade.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('gradeValue'+idx).textContent = newGrade;
+                    hideEditGrade(idx);
+                    afterGradeChange();
+                } else {
+                    alert('Gagal update nilai: ' + data.message);
+                }
+            })
+            .catch(() => alert('Terjadi kesalahan saat menghubungi server.'));
+        }
+        function deleteGradeConfirm(idx, studentId, subjectId, semester, academicYear) {
+            if (!confirm('Yakin ingin menghapus nilai ini?')) return;
+            let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}`;
+            if (academicYear) body += `&academic_year=${academicYear}`;
+            fetch('delete_grade.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.querySelectorAll('#modalGradesList tbody tr')[idx*2];
+                    const editRow = document.getElementById('editRow'+idx);
+                    if (row) row.remove();
+                    if (editRow) editRow.remove();
+                    afterGradeChange();
+                } else {
+                    alert('Gagal menghapus nilai: ' + data.message);
+                }
+            })
+            .catch(() => alert('Terjadi kesalahan saat menghubungi server.'));
+        }
+        // Optional: close modal on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeGradeDetailModal();
+        });
     </script>
 
     <!-- MODAL DETAIL NILAI -->
@@ -624,60 +698,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         function hideEditGrade(idx) {
             document.getElementById('editRow'+idx).style.display = 'none';
         }
-        function submitEditGrade(e, idx, studentId, subject, oldGrade, subjectId, semester, academicYear) {
-            e.preventDefault();
-            const newGrade = document.getElementById('editInput'+idx).value;
-            if (newGrade > 90) {
-                alert('Nilai maksimal adalah 90!');
-                return;
-            }
-            let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}&grade=${newGrade}`;
-            if (academicYear) body += `&academic_year=${academicYear}`;
-            fetch('update_grade.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('gradeValue'+idx).textContent = newGrade;
-                    hideEditGrade(idx);
-                    afterGradeChange();
-                } else {
-                    alert('Gagal update nilai: ' + data.message);
-                }
-            });
-        }
         function closeGradeDetailModal() {
             document.getElementById('gradeDetailModal').classList.add('hidden');
         }
-        function deleteGradeConfirm(idx, studentId, subjectId, semester, academicYear) {
-            if (!confirm('Yakin ingin menghapus nilai ini?')) return;
-            let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}`;
-            if (academicYear) body += `&academic_year=${academicYear}`;
-            fetch('delete_grade.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const row = document.querySelectorAll('#modalGradesList tbody tr')[idx*2];
-                    const editRow = document.getElementById('editRow'+idx);
-                    if (row) row.remove();
-                    if (editRow) editRow.remove();
-                    afterGradeChange();
-                } else {
-                    alert('Gagal menghapus nilai: ' + data.message);
-                }
-            });
-        }
-        // Optional: close modal on ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeGradeDetailModal();
-        });
     </script>
 </body>
 </html>
