@@ -264,6 +264,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         </div>
     </div>
 
+    <!-- Modal Detail Nilai -->
+    <div id="gradeDetailModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
+        <div class="modal-content" style="background:white; border-radius:1rem; max-width:95vw; width:400px; padding:2rem; box-shadow:0 10px 40px rgba(0,0,0,0.2); position:relative;">
+            <button onclick="hideGradeDetailModal()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; color:#888; cursor:pointer;">&times;</button>
+            <h2 id="modalStudentName" class="text-lg font-bold text-gray-800 mb-1"></h2>
+            <div class="text-xs text-gray-600 mb-2" id="modalStudentInfo"></div>
+            <div id="modalGradeList" class="mb-2"></div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
         <div class="container mx-auto px-4 max-w-md">
@@ -546,6 +556,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             
             link.href = url;
             return true;
+        }
+
+        function showGradeDetails(studentName, className, semester, grades) {
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalStudentInfo').textContent = `Kelas ${className} • Semester ${semester}`;
+            let html = '<table class="w-full text-sm mb-2"><thead><tr><th class="text-left py-1">Mata Pelajaran</th><th class="text-right py-1">Nilai</th></tr></thead><tbody>';
+            grades.forEach(g => {
+                html += `<tr><td class="py-1">${g.subject}</td><td class="py-1 text-right font-semibold">${g.grade}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('modalGradeList').innerHTML = html;
+            document.getElementById('gradeDetailModal').style.display = 'flex';
+        }
+        function hideGradeDetailModal() {
+            document.getElementById('gradeDetailModal').style.display = 'none';
         }
     </script>
 </body>
