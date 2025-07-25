@@ -100,6 +100,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         echo json_encode(['success' => true, 'students' => $students]);
         exit();
     }
+    if ($_POST['action'] === 'edit_grade') {
+        $student_id = $_POST['student_id'];
+        $subject_id = $_POST['subject_id'];
+        $grade = $_POST['grade'];
+        $semester = $_POST['semester'];
+        $academic_year = isset($_POST['academic_year']) ? $_POST['academic_year'] : null;
+        if (empty($student_id) || empty($subject_id) || $grade === '' || empty($semester)) {
+            echo json_encode(['success' => false, 'message' => 'Data tidak lengkap!']);
+            exit();
+        }
+        if (!is_numeric($grade) || $grade < 0 || $grade > 100) {
+            echo json_encode(['success' => false, 'message' => 'Nilai harus berupa angka antara 0-100!']);
+            exit();
+        }
+        $result = saveGrade($student_id, $subject_id, $grade, $semester, $academic_year);
+        echo json_encode($result);
+        exit();
+    }
+    if ($_POST['action'] === 'delete_grade') {
+        $student_id = $_POST['student_id'];
+        $subject_id = $_POST['subject_id'];
+        $semester = $_POST['semester'];
+        $academic_year = isset($_POST['academic_year']) ? $_POST['academic_year'] : null;
+        if (empty($student_id) || empty($subject_id) || empty($semester)) {
+            echo json_encode(['success' => false, 'message' => 'Data tidak lengkap!']);
+            exit();
+        }
+        $result = deleteGrade($student_id, $subject_id, $semester, $academic_year);
+        echo json_encode($result);
+        exit();
+    }
 }
 ?>
 
@@ -271,6 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             <h2 id="modalStudentName" class="text-lg font-bold text-gray-800 mb-1"></h2>
             <div class="text-xs text-gray-600 mb-2" id="modalStudentInfo"></div>
             <div id="modalGradeList" class="mb-2"></div>
+            <div id="modalGradeMsg" class="text-xs mb-2"></div>
         </div>
     </div>
 
@@ -561,13 +593,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         function showGradeDetails(studentName, className, semester, grades) {
             document.getElementById('modalStudentName').textContent = studentName;
             document.getElementById('modalStudentInfo').textContent = `Kelas ${className} • Semester ${semester}`;
-            let html = '<table class="w-full text-sm mb-2"><thead><tr><th class="text-left py-1">Mata Pelajaran</th><th class="text-right py-1">Nilai</th></tr></thead><tbody>';
-            grades.forEach(g => {
-                html += `<tr><td class="py-1">${g.subject}</td><td class="py-1 text-right font-semibold">${g.grade}</td></tr>`;
+            let html = '<table class="w-full text-sm mb-2"><thead><tr><th class="text-left py-1">Mata Pelajaran</th><th class="text-right py-1">Nilai</th><th></th></tr></thead><tbody>';
+            grades.forEach((g, idx) => {
+                html += `<tr>
+                    <td class="py-1">${g.subject}</td>
+                    <td class="py-1 text-right font-semibold">
+                        <input type="number" min="0" max="100" value="${g.grade}" id="edit-grade-${idx}" class="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm" style="background:#f8fafc;" />
+                    </td>
+                    <td class="py-1 text-right">
+                        <button onclick="saveGradeEdit('${studentName}', '${className}', '${semester}', ${idx})" class="text-green-600 hover:text-green-800 text-xs font-medium mr-2">Simpan</button>
+                        <button onclick="deleteGradeData('${studentName}', '${className}', '${semester}', ${idx})" class="text-red-600 hover:text-red-800 text-xs font-medium">Hapus</button>
+                    </td>
+                </tr>`;
             });
             html += '</tbody></table>';
             document.getElementById('modalGradeList').innerHTML = html;
+            document.getElementById('modalGradeMsg').textContent = '';
             document.getElementById('gradeDetailModal').style.display = 'flex';
+            // Simpan data untuk referensi
+            window._modalGradeData = {grades, studentName, className, semester};
+        }
+
+        async function saveGradeEdit(studentName, className, semester, idx) {
+            const {grades} = window._modalGradeData;
+            const g = grades[idx];
+            const input = document.getElementById(`edit-grade-${idx}`);
+            const newGrade = input.value;
+            document.getElementById('modalGradeMsg').textContent = '';
+            input.disabled = true;
+            try {
+                const res = await fetch('grades.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `ajax=1&action=edit_grade&student_id=${encodeURIComponent(g.student_id)}&subject_id=${encodeURIComponent(g.subject_id)}&grade=${encodeURIComponent(newGrade)}&semester=${encodeURIComponent(g.semester)}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('modalGradeMsg').textContent = 'Nilai berhasil diupdate!';
+                    loadResults();
+                } else {
+                    document.getElementById('modalGradeMsg').textContent = data.message || 'Gagal update nilai';
+                }
+            } catch (e) {
+                document.getElementById('modalGradeMsg').textContent = 'Terjadi error.';
+            }
+            input.disabled = false;
+        }
+
+        async function deleteGradeData(studentName, className, semester, idx) {
+            if (!confirm('Yakin ingin menghapus nilai ini?')) return;
+            const {grades} = window._modalGradeData;
+            const g = grades[idx];
+            document.getElementById('modalGradeMsg').textContent = '';
+            try {
+                const res = await fetch('grades.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `ajax=1&action=delete_grade&student_id=${encodeURIComponent(g.student_id)}&subject_id=${encodeURIComponent(g.subject_id)}&semester=${encodeURIComponent(g.semester)}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('modalGradeMsg').textContent = 'Nilai berhasil dihapus!';
+                    // Hapus baris dari tampilan modal
+                    grades.splice(idx, 1);
+                    showGradeDetails(studentName, className, semester, grades);
+                    loadResults();
+                } else {
+                    document.getElementById('modalGradeMsg').textContent = data.message || 'Gagal hapus nilai';
+                }
+            } catch (e) {
+                document.getElementById('modalGradeMsg').textContent = 'Terjadi error.';
+            }
         }
         function hideGradeDetailModal() {
             document.getElementById('gradeDetailModal').style.display = 'none';
