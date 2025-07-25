@@ -99,6 +99,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         $students = getStudents($class_id);
         echo json_encode(['success' => true, 'students' => $students]);
         exit();
+    } else if ($_POST['action'] === 'edit_grade') {
+        $student_id = $_POST['student_id'];
+        $subject_id = $_POST['subject_id'];
+        $semester = $_POST['semester'];
+        $academic_year = $_POST['academic_year'] ?? null;
+        $grade = $_POST['grade'];
+        $result = saveGrade($student_id, $subject_id, $grade, $semester, $academic_year);
+        echo json_encode($result);
+        exit();
+    } else if ($_POST['action'] === 'delete_grade') {
+        $student_id = $_POST['student_id'];
+        $subject_id = $_POST['subject_id'];
+        $semester = $_POST['semester'];
+        $academic_year = $_POST['academic_year'] ?? null;
+        require_once 'includes/functions.php';
+        $result = deleteGrade($student_id, $subject_id, $semester, $academic_year);
+        echo json_encode($result);
+        exit();
     }
 }
 ?>
@@ -495,7 +513,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 }
                 groupedGrades[key].grades.push({
                     subject: grade.subject_name,
-                    grade: parseFloat(grade.grade)
+                    subject_id: grade.subject_id,
+                    grade: parseFloat(grade.grade),
+                    semester: grade.semester,
+                    academic_year: grade.academic_year
                 });
             });
             
@@ -503,36 +524,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             Object.values(groupedGrades).forEach(student => {
                 const totalGrade = student.grades.reduce((sum, g) => sum + g.grade, 0);
                 const average = (totalGrade / student.grades.length).toFixed(1);
-                
                 html += `
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3 mb-3 border border-blue-100">
-                        <div class="flex justify-between items-start mb-3">
+                    <div class="bg-white rounded-lg p-2 mb-2 border border-blue-100 shadow-sm cursor-pointer hover:bg-blue-50 transition-all text-xs" onclick='showGradeDetailsModal(${JSON.stringify(student).replace(/'/g, "&#39;")})'>
+                        <div class="flex justify-between items-center">
                             <div>
-                                <h3 class="font-semibold text-gray-800 text-sm">${student.student_name}</h3>
-                                <p class="text-xs text-gray-600">NIS: ${student.student_id || 'Belum diisi'}</p>
-                                <p class="text-xs text-gray-600">Kelas ${student.class_name} • Semester ${student.semester}</p>
+                                <div class="font-semibold text-gray-800">${student.student_name}</div>
+                                <div class="text-gray-500">Kelas ${student.class_name} • Semester ${student.semester}</div>
                             </div>
                             <div class="text-right">
-                                <div class="text-base font-bold text-blue-600">${totalGrade}</div>
-                                <div class="text-xs text-gray-500">Total Nilai</div>
-                                <div class="text-base font-bold text-blue-600">${average}</div>
-                                <div class="text-xs text-gray-500">Rata-rata</div>
+                                <div class="font-bold text-blue-600">${totalGrade}</div>
+                                <div class="text-gray-500">Total</div>
+                                <div class="font-bold text-blue-600">${average}</div>
+                                <div class="text-gray-500">Rata2</div>
+                                <div class="text-gray-500">${student.grades.length} mapel</div>
                             </div>
-                        </div>
-                        <div class="mb-2">
-                            <button onclick="showGradeDetails('${student.student_name}', '${student.class_name}', '${student.semester}', ${JSON.stringify(student.grades).replace(/"/g, '&quot;')})" 
-                                    class="text-blue-600 hover:text-blue-800 text-xs font-medium underline">
-                                Lihat Detail Nilai (${student.grades.length} mata pelajaran)
-                            </button>
-                        </div>
-                        <div class="text-xs text-gray-500 text-right">
-                            Total: ${student.grades.length} mapel
                         </div>
                     </div>
                 `;
             });
-            
             container.innerHTML = html;
+        }
+
+        // Modal HTML
+        if (!document.getElementById('gradeDetailModal')) {
+            const modal = document.createElement('div');
+            modal.id = 'gradeDetailModal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 hidden';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-lg w-full max-w-xs p-4 relative">
+                    <button onclick="closeGradeDetailModal()" class="absolute top-2 right-2 text-gray-400 hover:text-red-500">✕</button>
+                    <div id="gradeDetailContent"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showGradeDetailsModal(student) {
+            const modal = document.getElementById('gradeDetailModal');
+            const content = document.getElementById('gradeDetailContent');
+            let html = `<div class='mb-2'><b>${student.student_name}</b><br>Kelas ${student.class_name} • Semester ${student.semester}</div>`;
+            html += '<table class="w-full text-xs mb-2"><thead><tr><th class="text-left">Mapel</th><th>Nilai</th><th></th></tr></thead><tbody>';
+            student.grades.forEach((g, idx) => {
+                html += `<tr>
+                    <td>${g.subject}</td>
+                    <td><input type='number' min='0' max='100' value='${g.grade}' id='edit-grade-${idx}' class='border rounded px-1 w-12 text-center'/></td>
+                    <td>
+                        <button onclick='editGrade(${JSON.stringify({student_id: student.student_id, subject_id: g.subject_id, semester: g.semester, academic_year: g.academic_year, idx})})' class='text-blue-600 hover:underline mr-2'>Edit</button>
+                        <button onclick='deleteGrade(${JSON.stringify({student_id: student.student_id, subject_id: g.subject_id, semester: g.semester, academic_year: g.academic_year})})' class='text-red-500 hover:underline'>Hapus</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            content.innerHTML = html;
+            modal.classList.remove('hidden');
+        }
+        function closeGradeDetailModal() {
+            document.getElementById('gradeDetailModal').classList.add('hidden');
+        }
+        // AJAX Edit Grade
+        function editGrade(data) {
+            const newGrade = document.getElementById('edit-grade-' + data.idx).value;
+            if (newGrade === '' || isNaN(newGrade) || newGrade < 0 || newGrade > 100) {
+                alert('Nilai harus 0-100');
+                return;
+            }
+            fetch('grades.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `ajax=1&action=edit_grade&student_id=${data.student_id}&subject_id=${data.subject_id}&semester=${data.semester}&academic_year=${data.academic_year}&grade=${newGrade}`
+            })
+            .then(r=>r.json()).then(res=>{
+                alert(res.message);
+                if(res.success){ closeGradeDetailModal(); loadResults(); }
+            });
+        }
+        // AJAX Delete Grade
+        function deleteGrade(data) {
+            if (!confirm('Yakin hapus nilai ini?')) return;
+            fetch('grades.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `ajax=1&action=delete_grade&student_id=${data.student_id}&subject_id=${data.subject_id}&semester=${data.semester}&academic_year=${data.academic_year}`
+            })
+            .then(r=>r.json()).then(res=>{
+                alert(res.message);
+                if(res.success){ closeGradeDetailModal(); loadResults(); }
+            });
         }
 
         function addFilterParams(link) {
