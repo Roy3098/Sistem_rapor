@@ -537,7 +537,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 }
                 groupedGrades[key].grades.push({
                     subject: grade.subject_name,
-                    grade: parseFloat(grade.grade)
+                    grade: parseFloat(grade.grade),
+                    student_id: grade.student_id,
+                    subject_id: grade.subject_id,
+                    semester: grade.semester
                 });
             });
             
