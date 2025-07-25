@@ -600,13 +600,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                     <td class='py-1'>${g.subject}</td>
                     <td class='py-1 text-right font-semibold' id='gradeValue${idx}'>${g.grade}</td>
                     <td class='py-1 text-right'>
-                        <button class='text-blue-600 hover:underline text-xs font-medium' onclick='showEditGrade(${idx}, ${studentId}, "${g.subject}", ${g.grade}, ${g.subject_id}, ${semester})'>Edit</button>
-                        <button class='text-red-600 hover:underline text-xs font-medium ml-2' onclick='deleteGradeConfirm(${idx}, ${studentId}, ${g.subject_id}, ${semester})'>Hapus</button>
+                        <button class='text-blue-600 hover:underline text-xs font-medium' onclick='showEditGrade(${idx}, ${studentId}, "${g.subject}", ${g.grade}, ${g.subject_id}, ${semester}, "${g.academic_year || ''}")'>Edit</button>
+                        <button class='text-red-600 hover:underline text-xs font-medium ml-2' onclick='deleteGradeConfirm(${idx}, ${studentId}, ${g.subject_id}, ${semester}, "${g.academic_year || ''}")'>Hapus</button>
                     </td>
                 </tr>
                 <tr id='editRow${idx}' style='display:none;'>
                     <td colspan='3'>
-                        <form onsubmit='submitEditGrade(event, ${idx}, ${studentId}, "${g.subject}", ${g.grade}, ${g.subject_id}, ${semester})' class='flex items-center gap-2'>
+                        <form onsubmit='submitEditGrade(event, ${idx}, ${studentId}, "${g.subject}", ${g.grade}, ${g.subject_id}, ${semester}, "${g.academic_year || ''}")' class='flex items-center gap-2'>
                             <input type='number' min='0' max='90' id='editInput${idx}' value='${g.grade}' class='border px-2 py-1 rounded w-20'>
                             <button type='submit' class='bg-green-500 text-white px-3 py-1 rounded text-xs font-semibold'>Simpan</button>
                             <button type='button' onclick='hideEditGrade(${idx})' class='bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold'>Batal</button>
@@ -618,23 +618,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             document.getElementById('modalGradesList').innerHTML = html;
             document.getElementById('gradeDetailModal').classList.remove('hidden');
         }
-        function showEditGrade(idx, studentId, subject, grade, subjectId, semester) {
+        function showEditGrade(idx, studentId, subject, grade, subjectId, semester, academicYear) {
             document.getElementById('editRow'+idx).style.display = '';
         }
         function hideEditGrade(idx) {
             document.getElementById('editRow'+idx).style.display = 'none';
         }
-        function submitEditGrade(e, idx, studentId, subject, oldGrade, subjectId, semester) {
+        function submitEditGrade(e, idx, studentId, subject, oldGrade, subjectId, semester, academicYear) {
             e.preventDefault();
             const newGrade = document.getElementById('editInput'+idx).value;
             if (newGrade > 90) {
                 alert('Nilai maksimal adalah 90!');
                 return;
             }
+            let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}&grade=${newGrade}`;
+            if (academicYear) body += `&academic_year=${academicYear}`;
             fetch('update_grade.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}&grade=${newGrade}`
+                body
             })
             .then(res => res.json())
             .then(data => {
@@ -650,9 +652,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         function closeGradeDetailModal() {
             document.getElementById('gradeDetailModal').classList.add('hidden');
         }
-        function deleteGradeConfirm(idx, studentId, subjectId, semester) {
+        function deleteGradeConfirm(idx, studentId, subjectId, semester, academicYear) {
             if (!confirm('Yakin ingin menghapus nilai ini?')) return;
-            const academicYear = undefined;
             let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}`;
             if (academicYear) body += `&academic_year=${academicYear}`;
             fetch('delete_grade.php', {

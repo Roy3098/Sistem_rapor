@@ -14,16 +14,25 @@ if (!$student_id || !$semester) {
 }
 
 if ($all) {
-    // Hapus semua nilai siswa di semester tertentu
     $db = getDbConnection();
-    $stmt = $db->prepare("DELETE FROM grades WHERE student_id = ? AND semester = ?");
-    if ($stmt->execute([$student_id, $semester])) {
+    if ($academic_year) {
+        $stmt = $db->prepare("DELETE FROM grades WHERE student_id = ? AND semester = ? AND academic_year = ?");
+        $stmt->execute([$student_id, $semester, $academic_year]);
+    } else {
+        $stmt = $db->prepare("DELETE FROM grades WHERE student_id = ? AND semester = ?");
+        $stmt->execute([$student_id, $semester]);
+    }
+    if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => true, 'message' => 'Semua nilai siswa berhasil dihapus!']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Gagal menghapus nilai!']);
+        echo json_encode(['success' => false, 'message' => 'Tidak ada data yang dihapus. Data tidak ditemukan.']);
     }
     exit;
 }
 
-$result = deleteGrade($student_id, $subject_id, $semester, $academic_year);
-echo json_encode($result);
+if ($subject_id) {
+    $result = deleteGrade($student_id, $subject_id, $semester, $academic_year);
+    echo json_encode($result);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Parameter subject_id tidak lengkap.']);
+}

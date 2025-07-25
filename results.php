@@ -230,7 +230,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 }
                 groupedGrades[key].grades.push({
                     subject: grade.subject_name,
-                    grade: parseFloat(grade.grade)
+                    grade: parseFloat(grade.grade),
+                    subject_id: grade.subject_id,
+                    academic_year: grade.academic_year // pastikan field ini dikirim
                 });
             });
             
