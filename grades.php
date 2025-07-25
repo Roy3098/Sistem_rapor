@@ -574,6 +574,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                     <td class='py-1 text-right font-semibold' id='gradeValue${idx}'>${g.grade}</td>
                     <td class='py-1 text-right'>
                         <button class='text-blue-600 hover:underline text-xs font-medium' onclick='showEditGrade(${idx}, ${studentId}, "${g.subject}", ${g.grade}, ${g.subject_id}, ${semester})'>Edit</button>
+                        <button class='text-red-600 hover:underline text-xs font-medium ml-2' onclick='deleteGradeConfirm(${idx}, ${studentId}, ${g.subject_id}, ${semester})'>Hapus</button>
                     </td>
                 </tr>
                 <tr id='editRow${idx}' style='display:none;'>
@@ -621,6 +622,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         }
         function closeGradeDetailModal() {
             document.getElementById('gradeDetailModal').classList.add('hidden');
+        }
+        function deleteGradeConfirm(idx, studentId, subjectId, semester) {
+            if (!confirm('Yakin ingin menghapus nilai ini?')) return;
+            // Asumsi tahun ajaran default, bisa diubah jika ada field academic_year
+            const academicYear = undefined;
+            let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}`;
+            if (academicYear) body += `&academic_year=${academicYear}`;
+            fetch('delete_grade.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Hapus baris nilai dari tampilan
+                    const row = document.querySelectorAll('#modalGradesList tbody tr')[idx*2];
+                    const editRow = document.getElementById('editRow'+idx);
+                    if (row) row.remove();
+                    if (editRow) editRow.remove();
+                } else {
+                    alert('Gagal menghapus nilai: ' + data.message);
+                }
+            });
         }
         // Optional: close modal on ESC
         document.addEventListener('keydown', function(e) {

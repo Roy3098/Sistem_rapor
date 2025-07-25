@@ -237,6 +237,19 @@ function saveGrade($student_id, $subject_id, $grade, $semester, $academic_year =
     }
 }
 
+function deleteGrade($student_id, $subject_id, $semester, $academic_year = null) {
+    $db = getDbConnection();
+    if (!$academic_year) {
+        $academic_year = date('Y') . '/' . (date('Y') + 1);
+    }
+    $stmt = $db->prepare("DELETE FROM grades WHERE student_id = ? AND subject_id = ? AND semester = ? AND academic_year = ?");
+    if ($stmt->execute([$student_id, $subject_id, $semester, $academic_year])) {
+        return ['success' => true, 'message' => 'Nilai berhasil dihapus!'];
+    } else {
+        return ['success' => false, 'message' => 'Gagal menghapus nilai!'];
+    }
+}
+
 function getGrades($class_id = null, $semester = null) {
     $db = getDbConnection();
     
