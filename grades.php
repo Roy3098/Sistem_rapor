@@ -540,7 +540,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                     grade: parseFloat(grade.grade),
                     student_id: grade.student_id,
                     subject_id: grade.subject_id,
-                    semester: grade.semester
+                    semester: grade.semester,
+                    academic_year: grade.academic_year
                 });
             });
             
@@ -628,7 +629,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 const res = await fetch('grades.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: `ajax=1&action=edit_grade&student_id=${encodeURIComponent(g.student_id)}&subject_id=${encodeURIComponent(g.subject_id)}&grade=${encodeURIComponent(newGrade)}&semester=${encodeURIComponent(g.semester)}`
+                    body: `ajax=1&action=edit_grade&student_id=${encodeURIComponent(g.student_id)}&subject_id=${encodeURIComponent(g.subject_id)}&grade=${encodeURIComponent(newGrade)}&semester=${encodeURIComponent(g.semester)}&academic_year=${encodeURIComponent(g.academic_year)}`
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -652,7 +653,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 const res = await fetch('grades.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: `ajax=1&action=delete_grade&student_id=${encodeURIComponent(g.student_id)}&subject_id=${encodeURIComponent(g.subject_id)}&semester=${encodeURIComponent(g.semester)}`
+                    body: `ajax=1&action=delete_grade&student_id=${encodeURIComponent(g.student_id)}&subject_id=${encodeURIComponent(g.subject_id)}&semester=${encodeURIComponent(g.semester)}&academic_year=${encodeURIComponent(g.academic_year)}`
                 });
                 const data = await res.json();
                 if (data.success) {
