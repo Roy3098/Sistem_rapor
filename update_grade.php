@@ -17,11 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'], $_POST[
         exit();
     }
     $db = getDbConnection();
-    if ($academic_year) {
+    if ($academic_year && $academic_year !== 'null' && $academic_year !== '') {
         $stmt = $db->prepare("UPDATE grades SET grade = ? WHERE student_id = ? AND subject_id = ? AND semester = ? AND academic_year = ?");
         $stmt->execute([$grade, $student_id, $subject_id, $semester, $academic_year]);
     } else {
-        $stmt = $db->prepare("UPDATE grades SET grade = ? WHERE student_id = ? AND subject_id = ? AND semester = ?");
+        $stmt = $db->prepare("UPDATE grades SET grade = ? WHERE student_id = ? AND subject_id = ? AND semester = ? AND (academic_year IS NULL OR academic_year = '')");
         $stmt->execute([$grade, $student_id, $subject_id, $semester]);
     }
     if ($stmt->rowCount() > 0) {

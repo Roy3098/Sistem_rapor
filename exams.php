@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtCek->execute([$subject_id, $class_id]);
                 $soalCount = $stmtCek->fetchColumn();
                 if ($soalCount == 0) {
-                    $error .= ' Tidak ada soal yang tersimpan di database.';
+                    $error .= ' Tidak ada soal yang tersimpan di database. (Debug: subject_id=' . $subject_id . ', class_id=' . $class_id . ', query count=' . $soalCount . ')';
                 }
                 break;
                 
