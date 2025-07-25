@@ -112,6 +112,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($soalCount == 0) {
                     $error .= ' Tidak ada soal yang tersimpan di database. (Debug: subject_id=' . $subject_id . ', class_id=' . $class_id . ', query count=' . $soalCount . ')';
                 }
+                // Debug: tampilkan semua exam_id dan questions
+                $stmtExamIds = $db->prepare("SELECT id FROM exams WHERE subject_id = ? AND class_id = ? AND type = 'questions'");
+                $stmtExamIds->execute([$subject_id, $class_id]);
+                $examIds = $stmtExamIds->fetchAll(PDO::FETCH_COLUMN);
+                $debugQuestions = [];
+                if (!empty($examIds)) {
+                    $in = implode(',', array_fill(0, count($examIds), '?'));
+                    $stmtQ = $db->prepare("SELECT id, exam_id, question_text FROM questions WHERE exam_id IN ($in)");
+                    $stmtQ->execute($examIds);
+                    $debugQuestions = $stmtQ->fetchAll(PDO::FETCH_ASSOC);
+                }
+                $error .= ' [Debug exam_id: ' . json_encode($examIds) . ', questions: ' . json_encode($debugQuestions) . ']';
                 break;
                 
             case 'delete_exam':

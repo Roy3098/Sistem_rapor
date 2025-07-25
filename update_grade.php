@@ -17,6 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'], $_POST[
         exit();
     }
     $db = getDbConnection();
+    // Debug: cek data di database sebelum update
+    $debugSelect = null;
+    if ($academic_year && $academic_year !== 'null' && $academic_year !== '') {
+        $stmtDebug = $db->prepare("SELECT * FROM grades WHERE student_id = ? AND subject_id = ? AND semester = ? AND academic_year = ?");
+        $stmtDebug->execute([$grade, $student_id, $subject_id, $semester, $academic_year]);
+        $debugSelect = $stmtDebug->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $stmtDebug = $db->prepare("SELECT * FROM grades WHERE student_id = ? AND subject_id = ? AND semester = ? AND (academic_year IS NULL OR academic_year = '')");
+        $stmtDebug->execute([$grade, $student_id, $subject_id, $semester]);
+        $debugSelect = $stmtDebug->fetchAll(PDO::FETCH_ASSOC);
+    }
     if ($academic_year && $academic_year !== 'null' && $academic_year !== '') {
         $stmt = $db->prepare("UPDATE grades SET grade = ? WHERE student_id = ? AND subject_id = ? AND semester = ? AND academic_year = ?");
         $stmt->execute([$grade, $student_id, $subject_id, $semester, $academic_year]);
@@ -27,7 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['student_id'], $_POST[
     if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => true]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Gagal update nilai. Data tidak ditemukan atau tidak berubah.']);
+        echo json_encode(['success' => false, 'message' => 'Gagal update nilai. Data tidak ditemukan atau tidak berubah.', 'debug' => [
+            'params' => compact('student_id','subject_id','semester','grade','academic_year'),
+            'select_result' => $debugSelect
+        ]]);
     }
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid request']);

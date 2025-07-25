@@ -15,6 +15,17 @@ if (!$student_id || !$semester) {
 
 if ($all) {
     $db = getDbConnection();
+    // Debug: cek data di database sebelum delete
+    $debugSelect = null;
+    if ($academic_year && $academic_year !== 'null' && $academic_year !== '') {
+        $stmtDebug = $db->prepare("SELECT * FROM grades WHERE student_id = ? AND semester = ? AND academic_year = ?");
+        $stmtDebug->execute([$student_id, $semester, $academic_year]);
+        $debugSelect = $stmtDebug->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $stmtDebug = $db->prepare("SELECT * FROM grades WHERE student_id = ? AND semester = ? AND (academic_year IS NULL OR academic_year = '')");
+        $stmtDebug->execute([$student_id, $semester]);
+        $debugSelect = $stmtDebug->fetchAll(PDO::FETCH_ASSOC);
+    }
     if ($academic_year && $academic_year !== 'null' && $academic_year !== '') {
         $stmt = $db->prepare("DELETE FROM grades WHERE student_id = ? AND semester = ? AND academic_year = ?");
         $stmt->execute([$student_id, $semester, $academic_year]);
@@ -25,7 +36,10 @@ if ($all) {
     if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => true, 'message' => 'Semua nilai siswa berhasil dihapus!']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Tidak ada data yang dihapus. Data tidak ditemukan.']);
+        echo json_encode(['success' => false, 'message' => 'Tidak ada data yang dihapus. Data tidak ditemukan.', 'debug' => [
+            'params' => compact('student_id','semester','academic_year'),
+            'select_result' => $debugSelect
+        ]]);
     }
     exit;
 }
