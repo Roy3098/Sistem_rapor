@@ -525,19 +525,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 const totalGrade = student.grades.reduce((sum, g) => sum + g.grade, 0);
                 const average = (totalGrade / student.grades.length).toFixed(1);
                 html += `
-                    <div class="bg-gradient-to-br from-blue-400/80 to-indigo-500/80 rounded-2xl p-4 mb-4 shadow-xl cursor-pointer hover:scale-105 hover:shadow-2xl transition-all duration-200 border-2 border-white/60 relative overflow-hidden group" onclick='showGradeDetailsModal(${JSON.stringify(student).replace(/'/g, "&#39;")})'>
-                        <div class="absolute -top-4 -right-4 opacity-10 text-8xl pointer-events-none select-none group-hover:opacity-20 transition-all">📊</div>
+                    <div class="bg-white rounded-lg p-2 mb-2 border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-all text-xs w-full max-w-xs mx-auto" style="min-width:220px;" onclick='showGradeDetailsModal(${JSON.stringify(student).replace(/'/g, "&#39;")})'>
                         <div class="flex items-center justify-between">
                             <div>
-                                <div class="font-bold text-white text-lg flex items-center gap-2"><span class='inline-block bg-white/20 rounded-full p-1'><svg class='w-5 h-5 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 14l9-5-9-5-9 5 9 5zm0 7v-6m0 6H5a2 2 0 01-2-2V7m17 12a2 2 0 002-2V7'></path></svg></span>${student.student_name}</div>
-                                <div class="text-indigo-100 text-xs mt-1">Kelas ${student.class_name} • Semester ${student.semester}</div>
+                                <div class="font-semibold text-gray-800 text-sm">${student.student_name}</div>
+                                <div class="text-gray-500 text-xs">Kelas ${student.class_name} • Semester ${student.semester}</div>
                             </div>
                             <div class="text-right">
-                                <div class="font-extrabold text-2xl text-white drop-shadow">${totalGrade}</div>
-                                <div class="text-indigo-100 text-xs">Total</div>
-                                <div class="font-bold text-lg text-yellow-200">${average}</div>
-                                <div class="text-indigo-100 text-xs">Rata2</div>
-                                <div class="text-indigo-100 text-xs mt-1">${student.grades.length} mapel</div>
+                                <div class="font-bold text-blue-600 text-base">${totalGrade}</div>
+                                <div class="text-gray-400 text-xs">Total</div>
+                                <div class="font-bold text-blue-600 text-sm">${average}</div>
+                                <div class="text-gray-400 text-xs">Rata2</div>
+                                <div class="text-gray-400 text-xs mt-1">${student.grades.length} mapel</div>
                             </div>
                         </div>
                     </div>
@@ -552,61 +551,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             modal.id = 'gradeDetailModal';
             modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden';
             modal.innerHTML = `
-                <div class="bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-2xl shadow-2xl w-full max-w-md p-0 relative border-2 border-blue-200 animate-fadeIn">
-                    <div class='flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-gradient-to-r from-blue-500/80 to-indigo-400/80 rounded-t-2xl'>
-                        <div class='flex items-center gap-2 text-white'>
-                            <svg class='w-7 h-7' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 14l9-5-9-5-9 5 9 5zm0 7v-6m0 6H5a2 2 0 01-2-2V7m17 12a2 2 0 002-2V7'></path></svg>
-                            <span class='font-bold text-lg'>Detail Nilai Siswa</span>
-                        </div>
-                        <button onclick="closeGradeDetailModal()" class="text-white hover:text-red-200 text-2xl font-bold">✕</button>
+                <div class="bg-white rounded-xl shadow-lg w-full max-w-xs p-0 relative border border-gray-200">
+                    <div class='flex items-center justify-between px-4 py-3 border-b border-gray-100 rounded-t-xl bg-white'>
+                        <div class='font-bold text-gray-700 text-base'>Detail Nilai Siswa</div>
+                        <button onclick="closeGradeDetailModal()" class="text-gray-400 hover:text-red-400 text-xl font-bold">✕</button>
                     </div>
-                    <div id="gradeDetailContent" class='p-6'></div>
+                    <div id="gradeDetailContent" class='p-4'></div>
                 </div>
             `;
             document.body.appendChild(modal);
         }
 
-        let modalEditState = {};
+        let modalStudentData = null;
         function showGradeDetailsModal(student) {
-            const modal = document.getElementById('gradeDetailModal');
+            modalStudentData = JSON.parse(JSON.stringify(student)); // deep copy
+            renderGradeDetailModal();
+            document.getElementById('gradeDetailModal').classList.remove('hidden');
+        }
+        function closeGradeDetailModal() {
+            document.getElementById('gradeDetailModal').classList.add('hidden');
+        }
+        function renderGradeDetailModal() {
+            const student = modalStudentData;
             const content = document.getElementById('gradeDetailContent');
-            let html = `<div class='mb-4'>
-                <div class='font-bold text-indigo-700 text-lg mb-1 flex items-center gap-2'><svg class='w-5 h-5 text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'></path></svg>${student.student_name}</div>
-                <div class='text-xs text-indigo-400 mb-2'>Kelas ${student.class_name} • Semester ${student.semester}</div>
+            let html = `<div class='mb-2'>
+                <div class='font-bold text-gray-700 text-base mb-1'>${student.student_name}</div>
+                <div class='text-xs text-gray-400 mb-2'>Kelas ${student.class_name} • Semester ${student.semester}</div>
             </div>`;
-            html += '<table class="w-full text-xs mb-2 rounded overflow-hidden"><thead><tr class="bg-blue-100 text-indigo-700"><th class="text-left py-2 px-2">Mapel</th><th>Nilai</th><th class="text-center">Aksi</th></tr></thead><tbody>';
-            modalEditState = {};
+            html += '<table class="w-full text-xs mb-2 rounded overflow-hidden"><thead><tr class="bg-gray-100 text-gray-700"><th class="text-left py-2 px-2">Mapel</th><th>Nilai</th><th class="text-center">Aksi</th></tr></thead><tbody>';
             student.grades.forEach((g, idx) => {
-                modalEditState[idx] = {edit: false, value: g.grade};
-                html += `<tr class='border-b border-blue-50 hover:bg-blue-50 transition-all'>
+                html += `<tr class='border-b border-gray-50 hover:bg-gray-50 transition-all'>
                     <td class='py-2 px-2'>${g.subject}</td>
                     <td class='py-2 px-2'>
                         <input type='number' min='0' max='100' value='${g.grade}' id='edit-grade-${idx}' class='border rounded px-2 w-16 text-center bg-gray-100 focus:bg-white focus:ring-2 focus:ring-blue-300 transition-all' disabled />
                     </td>
                     <td class='py-2 px-2 text-center'>
-                        <button id='edit-btn-${idx}' onclick='startEditGrade(${JSON.stringify({student_id: student.student_id, subject_id: g.subject_id, semester: g.semester, academic_year: g.academic_year, idx})})' class='text-blue-600 hover:bg-blue-100 rounded px-2 py-1 text-xs font-semibold'>Edit</button>
-                        <button id='save-btn-${idx}' onclick='saveEditGrade(${JSON.stringify({student_id: student.student_id, subject_id: g.subject_id, semester: g.semester, academic_year: g.academic_year, idx})})' class='text-green-600 bg-green-50 border border-green-200 rounded px-2 py-1 text-xs font-semibold ml-1 hidden'>Simpan</button>
-                        <button onclick='deleteGrade(${JSON.stringify({student_id: student.student_id, subject_id: g.subject_id, semester: g.semester, academic_year: g.academic_year})})' class='text-red-500 hover:bg-red-50 rounded px-2 py-1 text-xs font-semibold ml-1'>Hapus</button>
+                        <button id='edit-btn-${idx}' onclick='startEditGrade(${idx})' class='text-blue-600 hover:bg-blue-50 rounded px-2 py-1 text-xs font-semibold'>Edit</button>
+                        <button id='save-btn-${idx}' onclick='saveEditGrade(${idx})' class='text-green-600 bg-green-50 border border-green-200 rounded px-2 py-1 text-xs font-semibold ml-1 hidden'>Simpan</button>
+                        <button onclick='deleteGrade(${idx})' class='text-red-500 hover:bg-red-50 rounded px-2 py-1 text-xs font-semibold ml-1'>Hapus</button>
                     </td>
                 </tr>`;
             });
             html += '</tbody></table>';
             content.innerHTML = html;
-            modal.classList.remove('hidden');
-        }
-        function closeGradeDetailModal() {
-            document.getElementById('gradeDetailModal').classList.add('hidden');
         }
         // Edit mode: enable input and show save button
-        function startEditGrade(data) {
-            document.getElementById('edit-grade-' + data.idx).disabled = false;
-            document.getElementById('edit-grade-' + data.idx).focus();
-            document.getElementById('edit-btn-' + data.idx).classList.add('hidden');
-            document.getElementById('save-btn-' + data.idx).classList.remove('hidden');
+        function startEditGrade(idx) {
+            document.getElementById('edit-grade-' + idx).disabled = false;
+            document.getElementById('edit-grade-' + idx).focus();
+            document.getElementById('edit-btn-' + idx).classList.add('hidden');
+            document.getElementById('save-btn-' + idx).classList.remove('hidden');
         }
         // Save edited grade
-        function saveEditGrade(data) {
-            const newGrade = document.getElementById('edit-grade-' + data.idx).value;
+        function saveEditGrade(idx) {
+            const g = modalStudentData.grades[idx];
+            const newGrade = document.getElementById('edit-grade-' + idx).value;
             if (newGrade === '' || isNaN(newGrade) || newGrade < 0 || newGrade > 100) {
                 alert('Nilai harus 0-100');
                 return;
@@ -614,31 +613,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             fetch('grades.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `ajax=1&action=edit_grade&student_id=${data.student_id}&subject_id=${data.subject_id}&semester=${data.semester}&academic_year=${data.academic_year}&grade=${newGrade}`
+                body: `ajax=1&action=edit_grade&student_id=${modalStudentData.student_id}&subject_id=${g.subject_id}&semester=${g.semester}&academic_year=${g.academic_year}&grade=${newGrade}`
             })
             .then(r=>r.json()).then(res=>{
                 alert(res.message);
                 if(res.success){
-                    // Update value and disable input again
-                    document.getElementById('edit-grade-' + data.idx).disabled = true;
-                    document.getElementById('save-btn-' + data.idx).classList.add('hidden');
-                    document.getElementById('edit-btn-' + data.idx).classList.remove('hidden');
+                    modalStudentData.grades[idx].grade = parseFloat(newGrade);
+                    renderGradeDetailModal();
                     loadResults();
-                    // Optionally, update value in modal without closing
                 }
             });
         }
         // AJAX Delete Grade
-        function deleteGrade(data) {
+        function deleteGrade(idx) {
+            const g = modalStudentData.grades[idx];
             if (!confirm('Yakin hapus nilai ini?')) return;
             fetch('grades.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `ajax=1&action=delete_grade&student_id=${data.student_id}&subject_id=${data.subject_id}&semester=${data.semester}&academic_year=${data.academic_year}`
+                body: `ajax=1&action=delete_grade&student_id=${modalStudentData.student_id}&subject_id=${g.subject_id}&semester=${g.semester}&academic_year=${g.academic_year}`
             })
             .then(r=>r.json()).then(res=>{
                 alert(res.message);
-                if(res.success){ closeGradeDetailModal(); loadResults(); }
+                if(res.success){
+                    modalStudentData.grades.splice(idx,1);
+                    renderGradeDetailModal();
+                    loadResults();
+                }
             });
         }
 
