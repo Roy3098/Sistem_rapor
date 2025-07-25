@@ -505,11 +505,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 const totalGrade = student.grades.reduce((sum, g) => sum + g.grade, 0);
                 const average = (totalGrade / student.grades.length).toFixed(1);
                 html += `
-                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px] cursor-pointer group">
+                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px] group">
                         <div class="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
                             <span>${student.student_name.charAt(0)}</span>
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="flex-1 min-w-0 cursor-pointer" onclick='showGradeDetails("${student.student_name}", "${student.class_name}", "${student.semester}", ${JSON.stringify(student.grades).replace(/"/g, "&quot;")}, ${student.student_id}, "${student.class_name}")'>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="font-semibold text-gray-800 text-sm truncate" title="${student.student_name}">${student.student_name}</span>
                                 <span class="text-xs text-gray-500">Kls ${student.class_name} • Smt ${student.semester}</span>
@@ -544,7 +544,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         }
 
         function deleteAllGrades(studentId, className, semester) {
-            // Kirim request hapus semua nilai siswa di semester dan kelas tertentu
             fetch('delete_grade.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -559,6 +558,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                     alert('Gagal menghapus nilai: ' + data.message);
                 }
             });
+        }
+
+        // Setelah update/hapus nilai di modal, reload daftar nilai
+        function afterGradeChange() {
+            loadResults();
+            closeGradeDetailModal();
         }
     </script>
 
@@ -626,7 +631,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 alert('Nilai maksimal adalah 90!');
                 return;
             }
-            // Kirim update ke backend
             fetch('update_grade.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -637,6 +641,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 if (data.success) {
                     document.getElementById('gradeValue'+idx).textContent = newGrade;
                     hideEditGrade(idx);
+                    afterGradeChange();
                 } else {
                     alert('Gagal update nilai: ' + data.message);
                 }
@@ -647,7 +652,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         }
         function deleteGradeConfirm(idx, studentId, subjectId, semester) {
             if (!confirm('Yakin ingin menghapus nilai ini?')) return;
-            // Asumsi tahun ajaran default, bisa diubah jika ada field academic_year
             const academicYear = undefined;
             let body = `student_id=${studentId}&subject_id=${subjectId}&semester=${semester}`;
             if (academicYear) body += `&academic_year=${academicYear}`;
@@ -659,11 +663,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // Hapus baris nilai dari tampilan
                     const row = document.querySelectorAll('#modalGradesList tbody tr')[idx*2];
                     const editRow = document.getElementById('editRow'+idx);
                     if (row) row.remove();
                     if (editRow) editRow.remove();
+                    afterGradeChange();
                 } else {
                     alert('Gagal menghapus nilai: ' + data.message);
                 }
