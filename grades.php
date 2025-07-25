@@ -505,7 +505,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 const totalGrade = student.grades.reduce((sum, g) => sum + g.grade, 0);
                 const average = (totalGrade / student.grades.length).toFixed(1);
                 html += `
-                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px] cursor-pointer group" onclick="showGradeDetails('${student.student_name}', '${student.class_name}', '${student.semester}', ${JSON.stringify(student.grades).replace(/"/g, '&quot;')}, ${student.student_id}, '${student.class_name}')">
+                    <div class="bg-white/80 shadow-md rounded-xl p-3 mb-3 border border-blue-100 flex items-center gap-3 hover:shadow-lg transition-all min-h-[80px] cursor-pointer group">
                         <div class="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-bold text-lg shrink-0 group-hover:scale-105 transition-transform">
                             <span>${student.student_name.charAt(0)}</span>
                         </div>
@@ -518,6 +518,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                                 <div class="text-xs text-gray-500">Total Nilai: <span class="font-bold text-blue-600">${totalGrade}</span></div>
                                 <div class="text-xs text-gray-500">Rata-rata: <span class="font-bold text-blue-600">${average}</span></div>
                             </div>
+                        </div>
+                        <div class="flex flex-col gap-1 ml-2">
+                            <button class="text-blue-600 hover:underline text-xs font-medium" onclick='event.stopPropagation(); showGradeDetails("${student.student_name}", "${student.class_name}", "${student.semester}", ${JSON.stringify(student.grades).replace(/"/g, "&quot;")}, ${student.student_id}, "${student.class_name}")'>Edit</button>
+                            <button class="text-red-600 hover:underline text-xs font-medium" onclick='event.stopPropagation(); if(confirm("Yakin ingin menghapus semua nilai siswa ini?")){ deleteAllGrades(${student.student_id}, "${student.class_name}", "${student.semester}"); }'>Hapus</button>
                         </div>
                     </div>
                 `;
@@ -537,6 +541,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             
             link.href = url;
             return true;
+        }
+
+        function deleteAllGrades(studentId, className, semester) {
+            // Kirim request hapus semua nilai siswa di semester dan kelas tertentu
+            fetch('delete_grade.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `student_id=${studentId}&semester=${semester}&all=1`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Semua nilai siswa berhasil dihapus!');
+                    loadResults();
+                } else {
+                    alert('Gagal menghapus nilai: ' + data.message);
+                }
+            });
         }
     </script>
 

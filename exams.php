@@ -104,6 +104,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error = 'Tidak ada soal yang berhasil disimpan. ' . implode(', ', $errors);
                 }
+                // Tambahan: cek ulang apakah soal sudah masuk
+                $db = getDbConnection();
+                $stmtCek = $db->prepare("SELECT COUNT(*) FROM questions WHERE exam_id IN (SELECT id FROM exams WHERE subject_id = ? AND class_id = ? AND type = 'questions')");
+                $stmtCek->execute([$subject_id, $class_id]);
+                $soalCount = $stmtCek->fetchColumn();
+                if ($soalCount == 0) {
+                    $error .= ' Tidak ada soal yang tersimpan di database.';
+                }
                 break;
                 
             case 'delete_exam':
