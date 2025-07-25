@@ -343,7 +343,7 @@ $exams = getExams();
                             </div>
                         </div>
                     <?php endforeach; ?>
-                    <?php if (empty($grouped)): ?>
+                    <?php if (empty($groupedKeys) && empty($fileExams)): ?>
                         <div class="text-center py-8">
                             <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
